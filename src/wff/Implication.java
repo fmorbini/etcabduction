@@ -1,18 +1,23 @@
 package wff;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class Implication extends WFF {
 
 	private WFF antecedent=null;
 	private Predication consequent=null;
-	public Implication(Object antecedent, Object consequent) throws Exception {
+	public static Implication create(Object antecedent, Object consequent) throws Exception {
 		if (antecedent!=null && consequent!=null) {
 			WFF a=WFF.create(antecedent);
-			if (a!=null) this.antecedent=a;
 			Predication c=(Predication) WFF.create(consequent);
-			if (c!=null) this.consequent=c;
+			return new Implication(a,c);
 		}
+		return null;
+	}
+	public Implication(WFF antecedent, Predication consequent) throws Exception {
+		this.antecedent=antecedent;
+		this.consequent=consequent;
 	}
 	public List<Predication> getAntecedents() {
 		if (antecedent!=null) return antecedent.getAllBasicConjuncts();
@@ -21,6 +26,9 @@ public class Implication extends WFF {
 	public Predication getConsequent() {
 		return consequent;
 	}
+	public WFF getAntecedent() {
+		return antecedent;
+	}
 	
 	@Override
 	public String toString() {
@@ -28,5 +36,19 @@ public class Implication extends WFF {
 			return "(if "+antecedent+" "+consequent+")";
 		}
 		return null;
+	}
+	
+	@Override
+	public List<? extends UnifiableFormulaElement> getArguments() {
+		List<UnifiableFormulaElement> ret=null;
+		if (antecedent!=null) {
+			if (ret==null) ret=new ArrayList<>();
+			ret.add(antecedent);
+		}
+		if (consequent!=null) {
+			if (ret==null) ret=new ArrayList<>();
+			ret.add(consequent);
+		}
+		return ret;
 	}
 }

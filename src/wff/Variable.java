@@ -1,6 +1,8 @@
 package wff;
 
-public class Variable extends Term {
+import java.util.List;
+
+public class Variable extends Term implements Comparable<Variable> {
 
 	private String name;
 	public Variable(String s) {
@@ -12,5 +14,20 @@ public class Variable extends Term {
 	public String toString() {
 		return name;
 	}
+	
+	@Override
+	public List<? extends UnifiableFormulaElement> getArguments() {
+		return null;
+	}
+	
+	@Override
+	public boolean equals(Object obj) {
+		if (obj!=null && obj instanceof Variable) return name.equals(((Variable)obj).name);
+		else return false;
+	}
 
+	@Override
+	public int compareTo(Variable o) {
+		return name.compareTo(o.name);
+	}
 }

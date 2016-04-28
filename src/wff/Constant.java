@@ -1,5 +1,7 @@
 package wff;
 
+import java.util.List;
+
 public class Constant extends Term {
 	private String name=null;
 	public Constant(String s) {
@@ -9,5 +11,10 @@ public class Constant extends Term {
 	@Override
 	public String toString() {
 		return name;
+	}
+	
+	@Override
+	public List<? extends UnifiableFormulaElement> getArguments() {
+		return null;
 	}
 }

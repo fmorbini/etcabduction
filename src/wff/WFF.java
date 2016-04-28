@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Stack;
 
-public abstract class WFF {
+public abstract class WFF implements UnifiableFormulaElement {
 	public static WFF create(Object input) throws Exception {
 		WFF ret=null;
 		if (input!=null && input instanceof List && !((List)input).isEmpty()) {
@@ -14,21 +14,21 @@ public abstract class WFF {
 				int s=thing.size();
 				if (((String)f).equalsIgnoreCase("if")) {
 					if (s==3) {
-						ret=new Implication(thing.get(1),thing.get(2));
+						ret=Implication.create(thing.get(1),thing.get(2));
 					} else {
 						throw new Exception("Invalid number of arguments for implications: "+s+" "+input);
 					}
 				} else if (((String)f).equalsIgnoreCase("and")) {
-					if (s>2) ret=new Conjunction(thing.subList(1, thing.size()));
+					if (s>2) ret=Conjunction.create(thing.subList(1, thing.size()));
 					else ret=WFF.create((List) thing.get(1));
 				} else {
-					ret=new Predication((String)f,thing.subList(1, s));
+					ret=Predication.create((String)f,thing.subList(1, s));
 				}
 			} else throw new Exception("invalid first element: "+f);
 		}
 		return ret;
 	}
-	
+		
 	public List<Predication> getAllBasicConjuncts() {
 		List<Predication> ret=null;
 		if (this instanceof Conjunction) {

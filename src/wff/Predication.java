@@ -5,9 +5,9 @@ import java.util.List;
 
 public class Predication extends WFF {
 	protected String pred=null;
-	protected List<Term> arguments=null;
-	public Predication(String pred,List arguments) throws Exception {
-		this.pred=pred;
+	private List<Term> arguments=null;
+	public static Predication create(String pred,List arguments) throws Exception {
+		Predication ret=new Predication(pred);
 		List<Term> as=null;
 		if (arguments!=null && !arguments.isEmpty()) {
 			for(Object a:arguments) {
@@ -20,7 +20,14 @@ public class Predication extends WFF {
 				}
 			}
 		}
-		if (as!=null) this.arguments=as;
+		if (as!=null) ret.setArguments(as);
+		return ret;
+	}
+	public Predication(String name) {
+		this.pred=name;
+	}
+	public String getName() {
+		return getPredicate();
 	}
 	public String getPredicate() {
 		return pred;
@@ -29,10 +36,10 @@ public class Predication extends WFF {
 	@Override
 	public String toString() {
 		if (pred!=null) {
-			if (arguments!=null && !arguments.isEmpty()) {
+			if (getArguments()!=null && !getArguments().isEmpty()) {
 				StringBuffer ret=new StringBuffer();
 				ret.append("("+pred);
-				for(Term a:arguments) {
+				for(UnifiableFormulaElement a:getArguments()) {
 					ret.append(" "+a);
 				}
 				ret.append(")");
@@ -42,5 +49,17 @@ public class Predication extends WFF {
 			}
 		}
 		return null;
+	}
+	public int getArgCount() {
+		if (getArguments()!=null) return getArguments().size();
+		else return 0;
+	}
+	
+	@Override
+	public List<Term> getArguments() {
+		return arguments;
+	}
+	public void setArguments(List<Term> arguments) {
+		this.arguments = arguments;
 	}
 }
