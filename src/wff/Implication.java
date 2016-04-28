@@ -15,7 +15,7 @@ public class Implication extends WFF {
 		}
 		return null;
 	}
-	public Implication(WFF antecedent, Predication consequent) throws Exception {
+	public Implication(WFF antecedent, Predication consequent) {
 		this.antecedent=antecedent;
 		this.consequent=consequent;
 	}

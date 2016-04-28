@@ -1,4 +1,4 @@
-package parse;
+package kb;
 
 import java.util.ArrayList;
 import java.util.HashMap;

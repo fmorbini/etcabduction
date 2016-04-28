@@ -30,4 +30,9 @@ public class Variable extends Term implements Comparable<Variable> {
 	public int compareTo(Variable o) {
 		return name.compareTo(o.name);
 	}
+	
+	@Override
+	public int hashCode() {
+		return name.hashCode();
+	}
 }

@@ -6,8 +6,8 @@ import java.util.List;
 public class Function extends Term {
 	protected String pred=null;
 	private List<Term> arguments=null;
-	public Function(String pred,List arguments) throws Exception {
-		this.pred=pred;
+	public static Function create(String pred,List arguments) throws Exception {
+		Function ret=new Function(pred);
 		List<Term> as=null;
 		if (arguments!=null && !arguments.isEmpty()) {
 			for(Object a:arguments) {
@@ -20,7 +20,11 @@ public class Function extends Term {
 				}
 			}
 		}
-		if (as!=null) this.setArguments(as);
+		if (as!=null) ret.setArguments(as);
+		return ret;
+	}
+	public Function(String name) {
+		this.pred=name;
 	}
 	
 	@Override

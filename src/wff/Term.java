@@ -22,7 +22,7 @@ public abstract class Term implements UnifiableFormulaElement {
 				int s=((List)t).size();
 				Object f=((List)t).get(0);
 				if (f!=null && f instanceof String) {
-					ret=new Function((String)f,((List) t).subList(1, s));
+					ret=Function.create((String)f,((List) t).subList(1, s));
 				} else throw new Exception("invalid function name."+f);
 			} else throw new Exception("Invalid term type."+t);
 		}

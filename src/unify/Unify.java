@@ -1,4 +1,4 @@
-package parse;
+package unify;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -9,7 +9,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
 
+import parse.Generator;
 import wff.Conjunction;
+import wff.Constant;
 import wff.Function;
 import wff.Implication;
 import wff.Predication;
@@ -23,10 +25,10 @@ public class Unify {
 		return (v!=null && v instanceof Variable);
 	}
 	
-	public static Map<Variable, Term> robinson(UnifiableFormulaElement x,UnifiableFormulaElement y) throws Exception {
+	public static Map<Variable, Term> robinson(UnifiableFormulaElement x,UnifiableFormulaElement y) {
 		return robinson(x,y,null);
 	}
-	public static Map<Variable, Term> robinson(UnifiableFormulaElement x,UnifiableFormulaElement y,Map<Variable,Term> theta) throws Exception {
+	public static Map<Variable, Term> robinson(UnifiableFormulaElement x,UnifiableFormulaElement y,Map<Variable,Term> theta) {
 		x=subst(x,theta);
 		y=subst(y,theta);
 		if (!x.equals(y)) {
@@ -39,9 +41,11 @@ public class Unify {
 						theta.put((Variable)y, (Term)x);
 					}
 				} else if (occurCheck((Variable) x,y,theta)) {
+					if (theta==null) theta=new HashMap<>();
 					theta.put((Variable)x, (Term) y);
 				} else return null;
 			} else if (isVariable(y) && occurCheck((Variable) y, x, theta)) {
+				if (theta==null) theta=new HashMap<>();
 				theta.put((Variable)y, (Term)x);
 			} else if (x instanceof Predication && y instanceof Predication) {
 				String predX=((Predication)x).getPredicate();
@@ -73,6 +77,7 @@ public class Unify {
 						if (((Variable)thing).equals(var)) {
 							return false;
 						}
+					} else if (thing instanceof Constant) {
 					} else System.err.println("unknown options.");
 				}
 			}
@@ -80,7 +85,7 @@ public class Unify {
 		return true;
 	}
 
-	public static UnifiableFormulaElement subst(UnifiableFormulaElement thing,Map<Variable,Term> theta) throws Exception {
+	public static UnifiableFormulaElement subst(UnifiableFormulaElement thing,Map<Variable,Term> theta) {
 		if (thing!=null && theta!=null) {
 			if (thing instanceof Variable) {
 				if (theta.containsKey(thing)) {
@@ -96,9 +101,9 @@ public class Unify {
 						Term nt=(Term) subst(t,theta);
 						if (nt!=t) {
 							if (!changed) {
-								ret=new Function(ret.getName(), null);
+								ret=new Function(ret.getName());
 								ret.setArguments(nas=new ArrayList<>());
-								if (i-1>0) nas.addAll(nas.subList(0, i));
+								if (i-1>0) nas.addAll(as.subList(0, i));
 								changed=true;
 							}
 							nas.add(nt);
@@ -121,7 +126,7 @@ public class Unify {
 							if (!changed) {
 								ret=new Predication(ret.getName());
 								ret.setArguments(nas=new ArrayList<>());
-								if (i-1>0) nas.addAll(nas.subList(0, i));
+								if (i-1>0) nas.addAll(as.subList(0, i));
 								changed=true;
 							}
 							nas.add(nt);
@@ -156,7 +161,7 @@ public class Unify {
 							if (!changed) {
 								ret=new Conjunction();
 								ret.setConjuncts(nas=new ArrayList<>());
-								if (i-1>0) nas.addAll(nas.subList(0, i));
+								if (i-1>0) nas.addAll(as.subList(0, i));
 								changed=true;
 							}
 							nas.add(nt);
@@ -167,12 +172,12 @@ public class Unify {
 					}
 				}
 				return ret;
-			} else throw new Exception("unknown case: "+thing.getClass());
+			}
 		}
 		return thing;
 	}
 		
-	public static Map<Variable,Term> unify(UnifiableFormulaElement x,UnifiableFormulaElement y) throws Exception {
+	public static Map<Variable,Term> unify(UnifiableFormulaElement x,UnifiableFormulaElement y) {
 		return robinson(x, y);
 	}
 	
@@ -194,7 +199,7 @@ public class Unify {
 		return ret;
 	}
 	
-	public static Object skolem(UnifiableFormulaElement sexp) throws Exception {
+	public static Object skolem(UnifiableFormulaElement sexp) {
 		Set<Variable> vars=allVariables(sexp);
 		Map<Variable,Term> unif=null;
 		if (vars!=null) {
