@@ -6,21 +6,31 @@ import java.util.List;
 public class Conjunction extends WFF {
 
 	private List<WFF> conjuncts=null;
-	public Conjunction(List arguments) throws Exception {
+	public static Conjunction create(List arguments) throws Exception {
+		Conjunction ret=new Conjunction();
 		if (arguments!=null && !arguments.isEmpty()) {
 			for(Object a:arguments) {
 				if (a!=null) {
 					WFF aWff=WFF.create((List)a);
 					if (aWff!=null) {
-						if (this.conjuncts==null) this.conjuncts=new ArrayList<>();
-						this.conjuncts.add(aWff);
+						if (ret.conjuncts==null) ret.conjuncts=new ArrayList<>();
+						ret.conjuncts.add(aWff);
 					}
 				}
 			}
 		}
+		return ret;
 	}
 	public List<WFF> getConjuncts() {
+		return getArguments();
+	}
+	@Override
+	public List<WFF> getArguments() {
 		return conjuncts;
+	}
+	
+	public void setConjuncts(List<WFF> conjuncts) {
+		this.conjuncts = conjuncts;
 	}
 	
 	@Override
@@ -36,5 +46,4 @@ public class Conjunction extends WFF {
 		}
 		return null;
 	}
-
 }

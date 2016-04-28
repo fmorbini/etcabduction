@@ -1,5 +1,7 @@
 package parse;
 
+import wff.Constant;
+
 public class Generator {
 	
 	public static final Generator skolemGenerator=new Generator("$");
@@ -11,7 +13,7 @@ public class Generator {
 		this.prefix=prefix;
 	}
 	
-	public String next() {
-		return prefix+(v++);
+	public Constant next() {
+		return new Constant(prefix+(v++));
 	}
 }

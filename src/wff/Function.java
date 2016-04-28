@@ -5,7 +5,7 @@ import java.util.List;
 
 public class Function extends Term {
 	protected String pred=null;
-	protected List<Term> arguments=null;
+	private List<Term> arguments=null;
 	public Function(String pred,List arguments) throws Exception {
 		this.pred=pred;
 		List<Term> as=null;
@@ -20,16 +20,16 @@ public class Function extends Term {
 				}
 			}
 		}
-		if (as!=null) this.arguments=as;
+		if (as!=null) this.setArguments(as);
 	}
 	
 	@Override
 	public String toString() {
 		if (pred!=null) {
 			StringBuffer ret=new StringBuffer();
-			if (arguments!=null && !arguments.isEmpty()) {
+			if (getArguments()!=null && !getArguments().isEmpty()) {
 				ret.append("("+pred);
-				for(Term a:arguments) {
+				for(Term a:getArguments()) {
 					ret.append(" "+a);
 				}
 				ret.append(")");
@@ -40,4 +40,18 @@ public class Function extends Term {
 		}
 		return null;
 	}
+
+	@Override
+	public List<Term> getArguments() {
+		return arguments;
+	}
+
+	public void setArguments(List<Term> arguments) {
+		this.arguments = arguments;
+	}
+
+	public String getName() {
+		return pred;
+	}
+
 }

@@ -4,7 +4,7 @@ import java.util.List;
 
 import edu.usc.ict.nl.util.StringUtils;
 
-public abstract class Term {
+public abstract class Term implements UnifiableFormulaElement {
 	public static Term create(Object t) throws Exception {
 		Term ret=null;
 		if (t!=null) {
