@@ -12,7 +12,6 @@ import wff.Variable;
 
 public class AbductionNode extends Node {
 	Predication[] antecedents=null,assumptions=null;
-	int depth;
 	public AbductionNode(List<Predication> ants, List<Predication> ass) {
 		this.assumptions=null;
 		if (ass!=null && !ass.isEmpty()) {

@@ -10,6 +10,7 @@ import java.util.Set;
 import java.util.Stack;
 
 import parse.Generator;
+import parse.Parse;
 import wff.Conjunction;
 import wff.Constant;
 import wff.Function;
@@ -103,7 +104,7 @@ public class Unify {
 							if (!changed) {
 								ret=new Function(ret.getName());
 								ret.setArguments(nas=new ArrayList<>());
-								if (i-1>0) nas.addAll(as.subList(0, i));
+								if (i>0) nas.addAll(as.subList(0, i));
 								changed=true;
 							}
 							nas.add(nt);
@@ -126,7 +127,7 @@ public class Unify {
 							if (!changed) {
 								ret=new Predication(ret.getName());
 								ret.setArguments(nas=new ArrayList<>());
-								if (i-1>0) nas.addAll(as.subList(0, i));
+								if (i>0) nas.addAll(as.subList(0, i));
 								changed=true;
 							}
 							nas.add(nt);
@@ -161,7 +162,7 @@ public class Unify {
 							if (!changed) {
 								ret=new Conjunction();
 								ret.setConjuncts(nas=new ArrayList<>());
-								if (i-1>0) nas.addAll(as.subList(0, i));
+								if (i>0) nas.addAll(as.subList(0, i));
 								changed=true;
 							}
 							nas.add(nt);
@@ -211,5 +212,13 @@ public class Unify {
 		if (unif!=null) return Unify.subst(sexp, unif);
 		else return sexp;
 	}
-	
+
+	public static void main(String[] args) {
+		List<WFF> wff = Parse.parse("(p 0.01 ?a ?b)");
+		Map<Variable,Term> unif=new HashMap<>();
+		unif.put(new Variable("?a"), new Constant("E2"));
+		unif.put(new Variable("?b"), new Constant("BT"));
+		UnifiableFormulaElement r = Unify.subst(wff.get(0), unif);
+		System.out.println(r);
+	}
 }

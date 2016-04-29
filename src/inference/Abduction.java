@@ -4,8 +4,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Stack;
 
-import edu.usc.ict.nl.util.graph.Edge;
 import kb.IndexedKB;
 import parse.Parse;
 import unify.Unify;
@@ -80,46 +80,48 @@ public class Abduction {
 		}
 		// compute combinations of the ones with inferences.
 		List<AbductionStep> combinations=null;
-		for(Predication l:options.keySet()) {
-			List<UnifiedRule> rules=options.get(l);
-			if (rules!=null && !rules.isEmpty()) {
-				if (combinations==null || combinations.isEmpty()) {
-					if (combinations==null) combinations=new ArrayList<>();
-					for(UnifiedRule r:rules) {
-						List<Predication> aas=r.getAntecedents();
-						AbductionNode nn=new AbductionNode(aas,assumptions);
-						nn.addAssumptions(n.getAssumptions());
-						AbductionStep edge = new AbductionStep();
-						edge.setTarget(nn);
-						edge.setSource(n);
-						edge.addRule(r);
-						n.addEdge(edge, false, false);
-						combinations.add(edge);
-						//nn.applyUnifier(r.getUnifier());
-					}
-				} else {
-					List<AbductionStep> next=null;
-					List<AbductionStep> current=combinations;
-					int i=1;
-					int len=rules.size();
-					for(UnifiedRule r:rules) {
-						if (i<len) next=makeCopy(current);
-						else next=null;
-						for(AbductionStep literalsOptions:current) {
-							literalsOptions.addRule(r);
-							AbductionNode target = literalsOptions.getTarget();
-							target.addAntecedents(r.getAntecedents());
-							//target.applyUnifier(r.getUnifier());
+		if (options!=null) {
+			for(Predication l:options.keySet()) {
+				List<UnifiedRule> rules=options.get(l);
+				if (rules!=null && !rules.isEmpty()) {
+					if (combinations==null || combinations.isEmpty()) {
+						if (combinations==null) combinations=new ArrayList<>();
+						for(UnifiedRule r:rules) {
+							List<Predication> aas=r.getAntecedents();
+							AbductionNode nn=new AbductionNode(aas,assumptions);
+							nn.addAssumptions(n.getAssumptions());
+							AbductionStep edge = new AbductionStep();
+							edge.setTarget(nn);
+							edge.setSource(n);
+							edge.addRule(r);
+							n.addEdge(edge, false, false);
+							combinations.add(edge);
+							//nn.applyUnifier(r.getUnifier());
 						}
-						current=next;
-						if (next!=null) combinations.addAll(next);
-						i++;
+					} else {
+						List<AbductionStep> next=null;
+						List<AbductionStep> current=combinations;
+						int i=1;
+						int len=rules.size();
+						for(UnifiedRule r:rules) {
+							if (i<len) next=makeCopy(current);
+							else next=null;
+							for(AbductionStep literalsOptions:current) {
+								literalsOptions.addRule(r);
+								AbductionNode target = literalsOptions.getTarget();
+								target.addAntecedents(r.getAntecedents());
+								//target.applyUnifier(r.getUnifier());
+							}
+							current=next;
+							if (next!=null) combinations.addAll(next);
+							i++;
+						}
 					}
 				}
 			}
 		}
 		List<AbductionNode> ret=null;
-		if (combinations!=null && combinations.isEmpty()) {
+		if (combinations!=null && !combinations.isEmpty()) {
 			for(AbductionStep c:combinations) {
 				AbductionNode an=c.getTarget();
 				if (an!=null) {
@@ -151,12 +153,40 @@ public class Abduction {
 		return copyOfCombinations;
 	}
 	
+	private List<AbductionNode> run(int levelsToCrunch) throws Exception {
+		return run(getInitialNode(),levelsToCrunch); 
+	}
+	private List<AbductionNode> run(AbductionNode start,int levelsToCrunch) throws Exception {
+		Stack<AbductionNode> s=new Stack<>();
+		s.push(start);
+		List<AbductionNode> newLevel=null;
+		while(!s.isEmpty()) {
+			AbductionNode consider=s.pop();
+			List<AbductionNode> rs = doAbductionStep(consider);
+			if (rs!=null && !rs.isEmpty()) {
+				if (newLevel==null) newLevel=rs;
+				else newLevel.addAll(rs);
+			}
+			if (s.isEmpty()) {
+				levelsToCrunch--;
+				if (levelsToCrunch>0 && newLevel!=null && !newLevel.isEmpty()) {
+					s.addAll(newLevel);
+					System.out.println(newLevel.size());
+					newLevel=null;
+				} else {
+					break;
+				}
+			}
+		}
+		return newLevel;
+	}
+
 	public static void main(String[] args) throws Exception {
 		List<WFF> content = Parse.parse(Parse.kb);
 		List<WFF> obs=Parse.parse("(and (creepUpOn' E1 C BT) (flinch' E2 BT) (seq E1 E2))");
 		if (obs!=null && !obs.isEmpty() && obs.size()==1) {
 			Abduction a = new Abduction((List)obs.get(0).getAllBasicConjuncts(), (List)content, 10, true);
-			List<AbductionNode> rs = a.doAbductionStep(a.getInitialNode());
+			a.run(8);
 			a.getInitialNode().toGDLGraph("test.gdl");
 		}
 		System.out.println(content);
