@@ -22,31 +22,35 @@ import wff.Variable;
 import wff.WFF;
 
 public class Unify {
+	
+	private static final Map<Variable,Term> EMPTYUNIF=new HashMap<>();
+	
 	public static boolean isVariable(UnifiableFormulaElement v) {
 		return (v!=null && v instanceof Variable);
 	}
 	
+	private static boolean isEmptyUnif(Map<Variable, Term> unif) {return unif==null || unif==EMPTYUNIF;}
 	public static Map<Variable, Term> robinson(UnifiableFormulaElement x,UnifiableFormulaElement y) {
-		return robinson(x,y,null);
+		return robinson(x,y,EMPTYUNIF);
 	}
-	public static Map<Variable, Term> robinson(UnifiableFormulaElement x,UnifiableFormulaElement y,Map<Variable,Term> theta) {
+	private static Map<Variable, Term> robinson(UnifiableFormulaElement x,UnifiableFormulaElement y,Map<Variable,Term> theta) {
 		x=subst(x,theta);
 		y=subst(y,theta);
 		if (!x.equals(y)) {
 			if (isVariable(x)) {
 				if (isVariable(y)) {
-					if (theta==null) theta=new HashMap<>();
+					if (isEmptyUnif(theta)) theta=new HashMap<>();
 					if (((Variable) x).compareTo((Variable) y)<0) {
 						theta.put((Variable)x, (Term) y);
 					} else {
 						theta.put((Variable)y, (Term)x);
 					}
 				} else if (occurCheck((Variable) x,y,theta)) {
-					if (theta==null) theta=new HashMap<>();
+					if (isEmptyUnif(theta)) theta=new HashMap<>();
 					theta.put((Variable)x, (Term) y);
 				} else return null;
 			} else if (isVariable(y) && occurCheck((Variable) y, x, theta)) {
-				if (theta==null) theta=new HashMap<>();
+				if (isEmptyUnif(theta)) theta=new HashMap<>();
 				theta.put((Variable)y, (Term)x);
 			} else if (x instanceof Predication && y instanceof Predication) {
 				String predX=((Predication)x).getPredicate();
