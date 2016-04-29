@@ -13,7 +13,7 @@ public class Generator {
 		this.prefix=prefix;
 	}
 	
-	public Constant next() {
+	public synchronized Constant next() {
 		return new Constant(prefix+(v++));
 	}
 }

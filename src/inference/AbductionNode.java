@@ -4,6 +4,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import edu.usc.ict.nl.util.graph.Edge;
 import edu.usc.ict.nl.util.graph.Node;
 import unify.Unify;
 import wff.Predication;
@@ -11,8 +12,10 @@ import wff.Term;
 import wff.Variable;
 
 public class AbductionNode extends Node {
+	int depth;
 	Predication[] antecedents=null,assumptions=null;
 	public AbductionNode(List<Predication> ants, List<Predication> ass) {
+		this();
 		this.assumptions=null;
 		if (ass!=null && !ass.isEmpty()) {
 			int i=0;
@@ -27,6 +30,7 @@ public class AbductionNode extends Node {
 		}
 	}
 	public AbductionNode() {
+		depth=0;
 	}
 	public void addAssumptions(Predication[] ass) {
 		if (ass!=null && ass.length>0) {
@@ -95,5 +99,20 @@ public class AbductionNode extends Node {
 			for(Predication p:getAssumptions()) ret.append("  "+p+"\n");
 		}
 		return ret.toString();
+	}
+	
+	@Override
+	public boolean addEdge(Edge e, boolean noCycles, boolean stopIfCycle) throws Exception {
+		boolean r=super.addEdge(e, noCycles, stopIfCycle);
+		AbductionNode target = (AbductionNode) e.getTarget();
+		if (target!=this && target!=null) target.setDepth(getDepth()+1);
+		return r;
+	}
+
+	public int getDepth() {
+		return depth;
+	}
+	public void setDepth(int depth) {
+		this.depth = depth;
 	}
 }

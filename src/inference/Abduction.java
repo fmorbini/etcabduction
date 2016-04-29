@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Stack;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 import kb.IndexedKB;
 import parse.Parse;
@@ -18,19 +19,23 @@ import wff.WFF;
 public class Abduction {
 	
 	private IndexedKB iKb=null;
-	private int depth;
 	private List<Predication> obs;
 	private boolean skolemize;
 	private AbductionNode root=null;
+	private ConcurrentLinkedQueue<AbductionNode> jobQueue=null;
+	private List<AbductionWorker> workers=null;
 	
-	public Abduction(List<Predication> obs,List<Implication> kb,int depth) {
-		this(obs, kb, depth,true);
+	public Abduction(List<Predication> obs,List<Implication> kb) {
+		this(obs, kb,true,1);
 	}
-	public Abduction(List<Predication> obs,List<Implication> kb,int depth,boolean skolemize) {
+	public Abduction(List<Predication> obs,List<Implication> kb,boolean skolemize,int workers) {
 		this.iKb = new IndexedKB(kb);
-		this.depth=depth;
 		this.obs=obs;
 		this.skolemize=skolemize;
+		this.jobQueue=new ConcurrentLinkedQueue<>();
+		if (this.workers==null) this.workers=new ArrayList<>();
+		this.workers.clear();
+		for(int i=0;i<workers;i++) this.workers.add(new AbductionWorker(jobQueue, this));
 	}
 	
 	public AbductionNode getInitialNode() {
@@ -65,12 +70,18 @@ public class Abduction {
 				assumptions.add(l);
 			} else {
 				List<UnifiedRule> uRules=null;
+				boolean ruleFound=false;
 				for(Implication r:rules) {
 					Map<Variable, Term> theta = Unify.unify(l, r.getConsequent());
 					if (theta!=null) {
 						if (uRules==null) uRules=new ArrayList<>();
+						ruleFound=true;
 						uRules.add(new UnifiedRule(r, theta));
 					}
+				}
+				if (!ruleFound) {
+					if (assumptions==null) assumptions=new ArrayList<>();
+					assumptions.add(l);
 				}
 				if (uRules!=null) {
 					if (options==null) options=new HashMap<>();
@@ -157,6 +168,7 @@ public class Abduction {
 		return run(getInitialNode(),levelsToCrunch); 
 	}
 	private List<AbductionNode> run(AbductionNode start,int levelsToCrunch) throws Exception {
+		long startTime=System.currentTimeMillis();
 		Stack<AbductionNode> s=new Stack<>();
 		s.push(start);
 		List<AbductionNode> newLevel=null;
@@ -178,16 +190,44 @@ public class Abduction {
 				}
 			}
 		}
+		long endTime=System.currentTimeMillis();
+		System.out.println("runtime="+(endTime-startTime)+" ms");
+		
 		return newLevel;
+	}
+	private void runParallel(int levelsToCrunch) throws InterruptedException {
+		runParallel(getInitialNode(), levelsToCrunch);
+	}
+	private void runParallel(AbductionNode start,int levelsToCrunch) throws InterruptedException {
+		long startTime=System.currentTimeMillis();
+		if (workers!=null && !workers.isEmpty()) {
+			System.out.println("waiting for queue to be empty");
+			while(!jobQueue.isEmpty()) {Thread.sleep(100);}
+			for(AbductionWorker w:workers) {
+				w.setMaxDepth(levelsToCrunch);
+				w.start();
+			}
+			System.out.println("adding start node to queue");
+			jobQueue.add(start);
+			while(!jobQueue.isEmpty()) {Thread.sleep(100);}
+		}
+		long endTime=System.currentTimeMillis();
+		System.out.println("runtime="+(endTime-startTime)+" ms");
+	}
+
+	private void killWorkers() {
+		if (workers!=null) for(AbductionWorker w:workers) w.kill();
 	}
 
 	public static void main(String[] args) throws Exception {
 		List<WFF> content = Parse.parse(Parse.kb);
 		List<WFF> obs=Parse.parse("(and (creepUpOn' E1 C BT) (flinch' E2 BT) (seq E1 E2))");
 		if (obs!=null && !obs.isEmpty() && obs.size()==1) {
-			Abduction a = new Abduction((List)obs.get(0).getAllBasicConjuncts(), (List)content, 10, true);
-			a.run(8);
-			a.getInitialNode().toGDLGraph("test.gdl");
+			Abduction a = new Abduction((List)obs.get(0).getAllBasicConjuncts(), (List)content, true,8);
+			a.run(6);
+			//a.runParallel(9);
+			//a.killWorkers();
+			//a.getInitialNode().toGDLGraph("test.gdl");
 		}
 		System.out.println(content);
 	}
