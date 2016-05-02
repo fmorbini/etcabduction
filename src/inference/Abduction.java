@@ -24,6 +24,7 @@ public class Abduction {
 	private AbductionNode root=null;
 	private ConcurrentLinkedQueue<AbductionNode> jobQueue=null;
 	private List<AbductionWorker> workers=null;
+	private List<AbductionNode> etcSolutions=null;
 	
 	public Abduction(List<Predication> obs,List<Implication> kb) {
 		this(obs, kb,true,1);
@@ -35,7 +36,8 @@ public class Abduction {
 		this.jobQueue=new ConcurrentLinkedQueue<>();
 		if (this.workers==null) this.workers=new ArrayList<>();
 		this.workers.clear();
-		for(int i=0;i<workers;i++) this.workers.add(new AbductionWorker(jobQueue, this));
+		this.etcSolutions=new ArrayList<>();
+		for(int i=0;i<workers;i++) this.workers.add(new AbductionWorker(jobQueue, this,etcSolutions));
 	}
 	
 	public AbductionNode getInitialNode() {
@@ -54,6 +56,7 @@ public class Abduction {
 	 * assume all without inferences {l2,...,ln-1}
 	 * compute combinations of the ones with inferences: {a1,a2,a5}+ass,{a3,a5}+ass
 	 * for each possible set call recursively and decrement depth 
+	 * @param etcSolutions 
 	 * @return
 	 * @throws Exception 
 	 */
@@ -133,17 +136,32 @@ public class Abduction {
 		}
 		List<AbductionNode> ret=null;
 		if (combinations!=null && !combinations.isEmpty()) {
-			for(AbductionStep c:combinations) {
-				AbductionNode an=c.getTarget();
-				if (an!=null) {
-					if (ret==null) ret=new ArrayList<>();
-					ret.add(an);
+			synchronized (etcSolutions) {
+				for(AbductionStep c:combinations) {
+					AbductionNode an=c.getTarget();
+					if (an!=null) {
+						if (allEtcs(an)) {
+							etcSolutions.add(an);
+						} else {
+							if (ret==null) ret=new ArrayList<>();
+							ret.add(an);
+						}
+					}
 				}
 			}
 		}
 		return ret;
 	}
 
+	private boolean allEtcs(AbductionNode an) {
+		boolean ret=true;
+		Predication[] ps=an.getAntecedents();
+		if(ps!=null) for(Predication p:ps) if (!p.getIsEtc()) return false;
+		ps=an.getAssumptions();
+		if(ps!=null) for(Predication p:ps) if (!p.getIsEtc()) return false;
+		return ret;
+	}
+	
 	public static List<AbductionStep> makeCopy(List<AbductionStep> current) throws Exception {
 		List<AbductionStep> copyOfCombinations=new ArrayList<>();
 		for(AbductionStep e:current) {
@@ -168,6 +186,7 @@ public class Abduction {
 		return run(getInitialNode(),levelsToCrunch); 
 	}
 	private List<AbductionNode> run(AbductionNode start,int levelsToCrunch) throws Exception {
+		etcSolutions.clear();
 		long startTime=System.currentTimeMillis();
 		Stack<AbductionNode> s=new Stack<>();
 		s.push(start);
@@ -218,13 +237,32 @@ public class Abduction {
 	private void killWorkers() {
 		if (workers!=null) for(AbductionWorker w:workers) w.kill();
 	}
+	
+	public List<AbductionNode> getSolutions() {return etcSolutions;}
+	public List<AbductionNode> getSimplifiableSolutions() {
+		List<AbductionNode> ret=null;
+		List<AbductionNode> sols = getSolutions();
+		if (sols!=null) {
+			for(AbductionNode s:sols) {
+				if (s.getHasOverlap()) {
+					if (ret==null) ret=new ArrayList<>();
+					ret.add(s);
+				}
+			}
+		}
+		return ret;
+	}
 
 	public static void main(String[] args) throws Exception {
 		List<WFF> content = Parse.parse(Parse.kb);
 		List<WFF> obs=Parse.parse("(and (creepUpOn' E1 C BT) (flinch' E2 BT) (seq E1 E2))");
 		if (obs!=null && !obs.isEmpty() && obs.size()==1) {
 			Abduction a = new Abduction((List)obs.get(0).getAllBasicConjuncts(), (List)content, true,8);
-			a.run(6);
+			a.run(5);
+			List<AbductionNode> sols = a.getSolutions();
+			List<AbductionNode> sss = a.getSimplifiableSolutions();
+			System.out.println((sols!=null?sols.size():0)+" "+(sss!=null?sss.size():0));
+			System.out.println(sss);
 			//a.runParallel(9);
 			//a.killWorkers();
 			//a.getInitialNode().toGDLGraph("test.gdl");
