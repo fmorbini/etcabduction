@@ -2,9 +2,12 @@ package wff;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class Predication extends WFF {
 	protected String pred=null;
+	private boolean isEtc=false;
 	private List<Term> arguments=null;
 	public static Predication create(String pred,List arguments) throws Exception {
 		Predication ret=new Predication(pred);
@@ -23,8 +26,11 @@ public class Predication extends WFF {
 		if (as!=null) ret.setArguments(as);
 		return ret;
 	}
+	private static final Pattern etcPattern=Pattern.compile("^etc[0-9]+_.+$");
 	public Predication(String name) {
 		this.pred=name;
+		Matcher m=etcPattern.matcher(name);
+		if (m.matches()) isEtc=true;
 	}
 	public String getName() {
 		return getPredicate();
@@ -32,6 +38,8 @@ public class Predication extends WFF {
 	public String getPredicate() {
 		return pred;
 	}
+	
+	public boolean getIsEtc() {return isEtc;}
 	
 	@Override
 	public String toString() {

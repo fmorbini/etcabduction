@@ -17,4 +17,10 @@ public class Constant extends Term {
 	public List<? extends UnifiableFormulaElement> getArguments() {
 		return null;
 	}
+	
+	@Override
+	public boolean equals(Object obj) {
+		if (obj!=null && obj instanceof Constant) return name.equals(((Constant)obj).name);
+		else return false;
+	}
 }

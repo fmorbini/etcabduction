@@ -10,7 +10,7 @@ public class AbductionWorker extends Thread {
 	private ConcurrentLinkedQueue<AbductionNode> q;
 	private Abduction a;
 	
-	public AbductionWorker(ConcurrentLinkedQueue<AbductionNode> q,Abduction a) {
+	public AbductionWorker(ConcurrentLinkedQueue<AbductionNode> q,Abduction a,List<AbductionNode> etcSolutions) {
 		this.q=q;
 		this.a=a;
 	}

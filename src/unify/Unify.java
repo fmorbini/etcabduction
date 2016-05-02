@@ -218,11 +218,9 @@ public class Unify {
 	}
 
 	public static void main(String[] args) {
-		List<WFF> wff = Parse.parse("(p 0.01 ?a ?b)");
-		Map<Variable,Term> unif=new HashMap<>();
-		unif.put(new Variable("?a"), new Constant("E2"));
-		unif.put(new Variable("?b"), new Constant("BT"));
-		UnifiableFormulaElement r = Unify.subst(wff.get(0), unif);
+		List<WFF> wff1 = Parse.parse("(etc0_not 1.0 ?e3 ?e2)");
+		List<WFF> wff2 = Parse.parse("(etc0_not 1.0 ?e2 ?e3)");
+		Map<Variable, Term> r = Unify.unify(wff1.get(0), wff2.get(0));
 		System.out.println(r);
 	}
 }
