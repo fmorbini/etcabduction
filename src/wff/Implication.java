@@ -31,6 +31,11 @@ public class Implication extends WFF {
 	}
 	
 	@Override
+	public int getArgCount() {
+		return 2;
+	}
+	
+	@Override
 	public String toString() {
 		if (antecedent!=null && consequent!=null) {
 			return "(if "+antecedent+" "+consequent+")";

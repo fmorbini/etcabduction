@@ -21,6 +21,11 @@ public class Variable extends Term implements Comparable<Variable> {
 	}
 	
 	@Override
+	public int getArgCount() {
+		return 0;
+	}
+	
+	@Override
 	public boolean equals(Object obj) {
 		if (obj!=null && obj instanceof Variable) return name.equals(((Variable)obj).name);
 		else return false;

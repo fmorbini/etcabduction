@@ -1,9 +1,11 @@
 package unify;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -188,15 +190,15 @@ public class Unify {
 	
 	public static Set<Variable> allVariables(UnifiableFormulaElement sexp) {
 		Set<Variable> ret=null;
-		Stack<UnifiableFormulaElement> s=new Stack<>();
+		Deque<UnifiableFormulaElement> s=new ArrayDeque<>();
 		s.push(sexp);
 		while(!s.isEmpty()) {
 			UnifiableFormulaElement t=s.pop();
 			if (t!=null) {
 				List<? extends UnifiableFormulaElement> args = t.getArguments();
-				if (args!=null) s.addAll(args);
+				if (args!=null) for(UnifiableFormulaElement a:args) s.push(a);
 				else if (isVariable(t)) {
-					if (ret==null) ret=new HashSet<>();
+					if (ret==null) ret=new LinkedHashSet<>(6);
 					ret.add((Variable) t);
 				}
 			}
