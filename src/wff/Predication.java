@@ -58,6 +58,7 @@ public class Predication extends WFF {
 		}
 		return null;
 	}
+	@Override
 	public int getArgCount() {
 		if (getArguments()!=null) return getArguments().size();
 		else return 0;

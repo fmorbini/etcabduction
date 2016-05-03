@@ -34,6 +34,12 @@ public class Conjunction extends WFF {
 	}
 	
 	@Override
+	public int getArgCount() {
+		if (getArguments()!=null) return getArguments().size();
+		else return 0;
+	}
+	
+	@Override
 	public String toString() {
 		if (getConjuncts()!=null && !getConjuncts().isEmpty()) {
 			StringBuffer ret=new StringBuffer();

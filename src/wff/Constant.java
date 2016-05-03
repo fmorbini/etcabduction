@@ -21,6 +21,11 @@ public class Constant extends Term {
 	public List<? extends UnifiableFormulaElement> getArguments() {
 		return null;
 	}
+
+	@Override
+	public int getArgCount() {
+		return 0;
+	}
 	
 	@Override
 	public boolean equals(Object obj) {

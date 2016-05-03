@@ -49,6 +49,12 @@ public class Function extends Term {
 	public List<Term> getArguments() {
 		return arguments;
 	}
+	
+	@Override
+	public int getArgCount() {
+		if (getArguments()!=null) return getArguments().size();
+		else return 0;
+	}
 
 	public void setArguments(List<Term> arguments) {
 		this.arguments = arguments;
