@@ -40,4 +40,8 @@ public class Variable extends Term implements Comparable<Variable> {
 	public int hashCode() {
 		return name.hashCode();
 	}
+	
+	public void setName(String name) {
+		this.name = name;
+	}
 }
