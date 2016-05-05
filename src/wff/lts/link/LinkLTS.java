@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Set;
 
 import wff.Variable;
+import wff.lts.Generator;
 import wff.lts.LTSConverter;
 import wff.lts.LTSConverter.Type;
 
@@ -15,8 +16,12 @@ public class LinkLTS {
 	private Map<LinkLTS,LinkLTS> children=null;
 	private int[] vars=null;
 	private LinkLTS parent=null;
+	private long id=-1;
+
+	private static Generator ltsId=new Generator(0);
 
 	public LinkLTS(LinkLTS parent,LinkLTS n) {
+		this.id=ltsId.next();
 		this.element=n;
 		this.parent=parent;
 	}
@@ -26,6 +31,10 @@ public class LinkLTS {
 		LinkLTS link = children.get(n);
 		if (link==null) children.put(n, link=new LinkLTS(this,n));
 		return link;
+	}
+
+	public long getId() {
+		return id;
 	}
 
 	public LinkLTS getElement() {
