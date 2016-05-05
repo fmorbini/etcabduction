@@ -48,4 +48,5 @@ public abstract class WFF implements UnifiableFormulaElement {
 		}
 		return ret;
 	}
+
 }
