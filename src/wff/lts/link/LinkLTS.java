@@ -127,4 +127,17 @@ public class LinkLTS {
 		LinkLTS r = getRoot();
 		return r!=null?r.getRootType():null;
 	}
+
+	public String getPredicate() {
+		if (getType()==Type.WFF) {
+			LinkLTS p=this,pp=null;
+			if (p!=null) {
+				do {
+					pp=p;
+				} while ((p=p.getParent())!=null && !p.isRoot());
+			}
+			if (pp!=null) return pp.toString();
+		}
+		return null;
+	}
 }
