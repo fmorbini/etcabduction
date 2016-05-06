@@ -19,12 +19,24 @@ public class AbductionNode extends Node {
 	private Predication[] antecedents=null,assumptions=null;
 	private boolean hasOverlap=false;
 	private Set<String> predicatesInIt=null;
+	private Signature signature=null;
 	
 	public AbductionNode(List<Predication> ants, List<Predication> ass) {
 		this();
 		this.assumptions=null;
 		addAssumptions(ass);
 		addAntecedents(ants);
+	}
+	private Signature getSignature() throws Exception {
+		if (signature==null || signature.getDirty()) {
+			Predication[] ants=getAntecedents();
+			Predication[] ass=getAssumptions();
+			if (signature==null) signature=new Signature();
+			signature.addToSignature(ants);
+			signature.addToSignature(ass);
+		}
+		signature.setDirty(false);
+		return signature;
 	}
 	public AbductionNode() {
 		depth=0;
@@ -39,7 +51,7 @@ public class AbductionNode extends Node {
 			}
 			for(Predication a:ass) {
 				assumptions[i++]=a;
-				storePredicate(a.getName());
+				storePredicate(a);
 			}
 		}
 	}
@@ -53,7 +65,7 @@ public class AbductionNode extends Node {
 			}
 			for(Predication a:ass) {
 				assumptions[i++]=a;
-				storePredicate(a.getName());
+				storePredicate(a);
 			}
 		}
 	}
@@ -67,7 +79,7 @@ public class AbductionNode extends Node {
 			}
 			for(Predication a:ants) {
 				antecedents[i++]=a;
-				storePredicate(a.getName());
+				storePredicate(a);
 			}
 		}
 	}
@@ -78,12 +90,18 @@ public class AbductionNode extends Node {
 		return antecedents;
 	}
 	
-	private void storePredicate(String p) {
+	private void storePredicate(Predication p) {
 		if (p!=null) {
+			String name=p.getName();
 			if (predicatesInIt==null) predicatesInIt=new HashSet<>();
-			if (predicatesInIt.contains(p)) hasOverlap=true;
-			else predicatesInIt.add(p);
+			if (predicatesInIt.contains(name)) hasOverlap=true;
+			else predicatesInIt.add(name);
+			markSignatureAsDirty(); 
 		}
+	}
+	
+	private void markSignatureAsDirty() {
+		if (this.signature!=null) signature.setDirty(true);
 	}
 	
 	@Override

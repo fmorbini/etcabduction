@@ -1,9 +1,12 @@
 package inference;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.Stack;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -15,6 +18,7 @@ import wff.Predication;
 import wff.Term;
 import wff.Variable;
 import wff.WFF;
+import wff.lts.link.LinkLTS;
 
 public class Abduction {
 	
@@ -253,6 +257,11 @@ public class Abduction {
 		return ret;
 	}
 
+	private static List<AbductionNode> compressSolutions(List<AbductionNode> sols) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 	public static void main(String[] args) throws Exception {
 		List<WFF> content = Parse.parse(Parse.kb);
 		List<WFF> obs=Parse.parse("(and (creepUpOn' E1 C BT) (flinch' E2 BT) (seq E1 E2))");
@@ -260,13 +269,17 @@ public class Abduction {
 			Abduction a = new Abduction((List)obs.get(0).getAllBasicConjuncts(), (List)content, true,8);
 			a.run(5);
 			List<AbductionNode> sols = a.getSolutions();
+			List<AbductionNode> csols = compressSolutions(sols);
 			List<AbductionNode> sss = a.getSimplifiableSolutions();
 			System.out.println((sols!=null?sols.size():0)+" "+(sss!=null?sss.size():0));
-			System.out.println(sss);
+			//System.out.println(sss);
+			//Utils.computeStats(sss);
+			List<AbductionNode> ds=Utils.findDuplicates(sss);
+			//Utils.groupUniqueLTSs(sss);
 			//a.runParallel(9);
 			//a.killWorkers();
 			//a.getInitialNode().toGDLGraph("test.gdl");
 		}
-		System.out.println(content);
+		//System.out.println(content);
 	}
 }
