@@ -2,6 +2,7 @@ package inference;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -16,7 +17,7 @@ import wff.lts.link.LinkLTS;
 
 public class Utils {
 	/**
-	 * computes sharing across abduction nodes. generates an histogram of number of nodes that share a certain number of literals.
+	 * computes sharing across abduction nodes. generates an histogram of number of nodes (y) that share a certain number of literals (x).
 	 * @param ans
 	 */
 	public static void computeStats(List<AbductionNode> ans) {
@@ -160,8 +161,110 @@ public class Utils {
 			System.out.println(n+"("+things.size()+"): "+things);
 		}
 	}
-	public static List<AbductionNode> findDuplicates(List<AbductionNode> sss) {
-		// TODO Auto-generated method stub
-		return null;
+	
+	public static Map<String,Set<LinkLTS>> findSetsOfUnifiableLiterals(List<AbductionNode> abdns) {
+		Set<LinkLTS> ltss = Utils.uniqueLTS(abdns);
+		Map<String,Set<LinkLTS>> ret=null;
+		if (ltss!=null) {
+			for(LinkLTS l:ltss) {
+				String name=l.getPredicate();
+				int c=l.getArgCount();
+				String s=name+"_"+c;
+				if (ret==null) ret=new HashMap<>();
+				Set<LinkLTS> ss=ret.get(s);
+				if (ss==null) ret.put(s, ss=new HashSet<>());
+				ss.add(l);
+			}
+			if (ret!=null) {
+				Set<String> toBeRemoved=null;
+				for(String s:ret.keySet()) {
+					Set<LinkLTS> ss=ret.get(s);
+					if (ss.size()<2) {
+						if (toBeRemoved==null) toBeRemoved=new HashSet<>();
+						toBeRemoved.add(s);
+					}
+				}
+				System.out.println("all sets: "+ret.size());
+				/*
+				if (toBeRemoved!=null) {
+					System.out.println("single sets: "+toBeRemoved.size());
+					for(String s:toBeRemoved) ret.remove(s);
+				}
+				*/
+			}
+		}
+		statsOnSetOfUnifiableLiterals(ret);
+		return ret;
 	}
+	public static int[] statsOnSetOfUnifiableLiterals(Map<String,Set<LinkLTS>> uls) {
+		int[] ret=null;
+		if (uls!=null && !uls.isEmpty()) {
+			int max=0;
+			for(String s:uls.keySet()) {
+				Set<LinkLTS> ss=uls.get(s);
+				if (ss!=null && ss.size()>max) max=ss.size();
+			}
+			ret=new int[max+1];
+			for(String s:uls.keySet()) {
+				Set<LinkLTS> ss=uls.get(s);
+				ret[ss.size()]++;
+			}
+		}
+		System.out.println(Arrays.toString(ret));
+		return ret;
+	}
+	
+	public static List<AbductionNode> findUnique(List<AbductionNode> abdns) {
+		Map<Signature,Set<AbductionNode>> nodes=null;
+		if (abdns!=null) {
+			boolean errors=false;
+			for(AbductionNode a:abdns) {
+				try {
+					Signature s = a.getSignature();
+					if (nodes==null) nodes=new HashMap<>();
+					Set<AbductionNode> ss=nodes.get(s);
+					if (ss==null) nodes.put(s, ss=new HashSet<>());
+					ss.add(a);
+				} catch (Exception e) {
+					e.printStackTrace();
+					errors=true;
+				}
+			}
+			if (errors) return abdns;
+		}
+		List<AbductionNode> ret=null;
+		if (nodes==null || nodes.size()==abdns.size()) return abdns;
+		else {
+			for(Set<AbductionNode> ss:nodes.values()) {
+				if (ss!=null && !ss.isEmpty()) {
+					if (ret==null) ret=new ArrayList<>();
+					ret.add(ss.iterator().next());
+				}
+			}
+		}
+		return ret;
+	}
+	
+	public static List<AbductionNode> getSimplifiableSolutions(List<AbductionNode> sols) {
+		List<AbductionNode> ret=null;
+		if (sols!=null) {
+			for(AbductionNode s:sols) {
+				if (s.getHasOverlap()) {
+					if (ret==null) ret=new ArrayList<>();
+					ret.add(s);
+				}
+			}
+		}
+		return ret;
+	}
+	
+	public static Signature computeSignatureForListOfLTS(Collection<LinkLTS> ltss) {
+		Signature ret=null;
+		if (ltss!=null) {
+			ret=new Signature();
+			ret.addToSignature(ltss);
+		}
+		return ret;
+	}
+
 }

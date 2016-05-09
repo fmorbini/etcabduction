@@ -210,6 +210,7 @@ public class LTSConverter {
 	public static void main(String[] args) throws Exception {
 		List<WFF> f=Parse.parse("(p1 C)");
 		LinkLTS f1=toLTS(f.get(0));
+		System.out.println(f1.getArgCount());
 		System.out.println(f1.getId()+": "+f1);
 		UnifiableFormulaElement u=fromLTS(f1);
 		System.out.println(u);

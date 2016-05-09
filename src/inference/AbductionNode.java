@@ -1,6 +1,7 @@
 package inference;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -12,6 +13,8 @@ import unify.Unify;
 import wff.Predication;
 import wff.Term;
 import wff.Variable;
+import wff.lts.LTSConverter;
+import wff.lts.link.LinkLTS;
 
 public class AbductionNode extends Node {
 	
@@ -27,7 +30,7 @@ public class AbductionNode extends Node {
 		addAssumptions(ass);
 		addAntecedents(ants);
 	}
-	private Signature getSignature() throws Exception {
+	public Signature getSignature() throws Exception {
 		if (signature==null || signature.getDirty()) {
 			Predication[] ants=getAntecedents();
 			Predication[] ass=getAssumptions();
@@ -161,4 +164,39 @@ public class AbductionNode extends Node {
 	}
 	
 	public boolean getHasOverlap() {return hasOverlap;}
+	
+	public Map<String, Set<Predication>> getUnifiableSets() throws Exception {
+		Map<String, Set<Predication>> ret=null;
+		if (getHasOverlap()) {
+			Predication[] ants = getAntecedents();
+			ret=addToSets(ants,ret);
+			Predication[] ass = getAssumptions();
+			ret=addToSets(ass,ret);
+		}
+		return ret;
+	}
+	private Map<String, Set<Predication>> addToSets(Predication[] ants, Map<String, Set<Predication>> ret) throws Exception {
+		if (ants!=null) {
+			for(Predication p:ants) {
+				String name=p.getPredicate();
+				int c=p.getArgCount();
+				String s=name+"_"+c;
+				if (ret==null) ret=new HashMap<>();
+				Set<Predication> ss=ret.get(s);
+				if (ss==null) ret.put(s, ss=new HashSet<>());
+				ss.add(p);
+			}
+		}
+		return ret;
+	}
+	
+	public boolean allEtcs() {
+		boolean ret=true;
+		Predication[] ps=getAntecedents();
+		if(ps!=null) for(Predication p:ps) if (!p.getIsEtc()) return false;
+		ps=getAssumptions();
+		if(ps!=null) for(Predication p:ps) if (!p.getIsEtc()) return false;
+		return ret;
+	}
+
 }
