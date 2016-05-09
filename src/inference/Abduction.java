@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -16,6 +17,7 @@ import unify.Unify;
 import wff.Implication;
 import wff.Predication;
 import wff.Term;
+import wff.UnifiableFormulaElement;
 import wff.Variable;
 import wff.WFF;
 import wff.lts.link.LinkLTS;
@@ -26,22 +28,18 @@ public class Abduction {
 	private List<Predication> obs;
 	private boolean skolemize;
 	private AbductionNode root=null;
-	private ConcurrentLinkedQueue<AbductionNode> jobQueue=null;
-	private List<AbductionWorker> workers=null;
-	private List<AbductionNode> etcSolutions=null;
+	protected List<AbductionNode> etcSolutions=null;
+	protected Map<Signature,AbductionNode> encouteredNodes=null;
 	
 	public Abduction(List<Predication> obs,List<Implication> kb) {
-		this(obs, kb,true,1);
+		this(obs, kb,true);
 	}
-	public Abduction(List<Predication> obs,List<Implication> kb,boolean skolemize,int workers) {
+	public Abduction(List<Predication> obs,List<Implication> kb,boolean skolemize) {
 		this.iKb = new IndexedKB(kb);
 		this.obs=obs;
 		this.skolemize=skolemize;
-		this.jobQueue=new ConcurrentLinkedQueue<>();
-		if (this.workers==null) this.workers=new ArrayList<>();
-		this.workers.clear();
 		this.etcSolutions=new ArrayList<>();
-		for(int i=0;i<workers;i++) this.workers.add(new AbductionWorker(jobQueue, this,etcSolutions));
+		this.encouteredNodes=new HashMap<>();
 	}
 	
 	public AbductionNode getInitialNode() {
@@ -144,11 +142,23 @@ public class Abduction {
 				for(AbductionStep c:combinations) {
 					AbductionNode an=c.getTarget();
 					if (an!=null) {
-						if (allEtcs(an)) {
-							etcSolutions.add(an);
+						Signature ans=an.getSignature();
+						if (an.allEtcs()) {
+							AbductionNode ean=encouteredNodes.get(ans);
+							if (ean==null) {
+								encouteredNodes.put(ans, an);
+								etcSolutions.add(an);
+							}
 						} else {
-							if (ret==null) ret=new ArrayList<>();
-							ret.add(an);
+							AbductionNode ean=encouteredNodes.get(ans);
+							if (ean!=null) {
+								c.getSource().removeThisOutgoingEdge(c);
+								c.getSource().addEdgeTo(ean, false, false);
+							} else {
+								if (ret==null) ret=new ArrayList<>();
+								encouteredNodes.put(ans, an);
+								ret.add(an);
+							}
 						}
 					}
 				}
@@ -157,15 +167,6 @@ public class Abduction {
 		return ret;
 	}
 
-	private boolean allEtcs(AbductionNode an) {
-		boolean ret=true;
-		Predication[] ps=an.getAntecedents();
-		if(ps!=null) for(Predication p:ps) if (!p.getIsEtc()) return false;
-		ps=an.getAssumptions();
-		if(ps!=null) for(Predication p:ps) if (!p.getIsEtc()) return false;
-		return ret;
-	}
-	
 	public static List<AbductionStep> makeCopy(List<AbductionStep> current) throws Exception {
 		List<AbductionStep> copyOfCombinations=new ArrayList<>();
 		for(AbductionStep e:current) {
@@ -185,12 +186,39 @@ public class Abduction {
 		}
 		return copyOfCombinations;
 	}
-	
+
+	private static List<AbductionNode> doUnificationStep(List<AbductionNode> sols) throws Exception {
+		int count=0;
+		/**
+		 * find list of nodes to try to unify
+		 *  find in each abduction node the set of literals that could be unified (same name ad number of arguments). 
+		 */
+		Map<Signature,Map<Variable,UnifiableFormulaElement>> pairToUnif=null;
+		if (sols!=null) {
+			for(AbductionNode a:sols) {
+				Map<String,Set<Predication>> us=a.getUnifiableSets();
+				if (us!=null) {
+					for (Set<Predication> ss:us.values()) {
+						if (ss!=null && ss.size()>1) {
+							
+						}
+					}
+				}
+			}
+		}
+		System.out.println(count);
+		return null;
+	}
+
+	private void clear() {
+		etcSolutions.clear();
+		encouteredNodes.clear();
+	}
 	private List<AbductionNode> run(int levelsToCrunch) throws Exception {
 		return run(getInitialNode(),levelsToCrunch); 
 	}
 	private List<AbductionNode> run(AbductionNode start,int levelsToCrunch) throws Exception {
-		etcSolutions.clear();
+		clear();
 		long startTime=System.currentTimeMillis();
 		Stack<AbductionNode> s=new Stack<>();
 		s.push(start);
@@ -218,63 +246,27 @@ public class Abduction {
 		
 		return newLevel;
 	}
-	private void runParallel(int levelsToCrunch) throws InterruptedException {
-		runParallel(getInitialNode(), levelsToCrunch);
-	}
-	private void runParallel(AbductionNode start,int levelsToCrunch) throws InterruptedException {
-		long startTime=System.currentTimeMillis();
-		if (workers!=null && !workers.isEmpty()) {
-			System.out.println("waiting for queue to be empty");
-			while(!jobQueue.isEmpty()) {Thread.sleep(100);}
-			for(AbductionWorker w:workers) {
-				w.setMaxDepth(levelsToCrunch);
-				w.start();
-			}
-			System.out.println("adding start node to queue");
-			jobQueue.add(start);
-			while(!jobQueue.isEmpty()) {Thread.sleep(100);}
-		}
-		long endTime=System.currentTimeMillis();
-		System.out.println("runtime="+(endTime-startTime)+" ms");
-	}
-
-	private void killWorkers() {
-		if (workers!=null) for(AbductionWorker w:workers) w.kill();
-	}
 	
 	public List<AbductionNode> getSolutions() {return etcSolutions;}
-	public List<AbductionNode> getSimplifiableSolutions() {
-		List<AbductionNode> ret=null;
-		List<AbductionNode> sols = getSolutions();
-		if (sols!=null) {
-			for(AbductionNode s:sols) {
-				if (s.getHasOverlap()) {
-					if (ret==null) ret=new ArrayList<>();
-					ret.add(s);
-				}
-			}
-		}
-		return ret;
-	}
 
-	private static List<AbductionNode> compressSolutions(List<AbductionNode> sols) {
-		// TODO Auto-generated method stub
-		return null;
-	}
 
 	public static void main(String[] args) throws Exception {
 		List<WFF> content = Parse.parse(Parse.kb);
 		List<WFF> obs=Parse.parse("(and (creepUpOn' E1 C BT) (flinch' E2 BT) (seq E1 E2))");
 		if (obs!=null && !obs.isEmpty() && obs.size()==1) {
-			Abduction a = new Abduction((List)obs.get(0).getAllBasicConjuncts(), (List)content, true,8);
+			Abduction a = new Abduction((List)obs.get(0).getAllBasicConjuncts(), (List)content, true);
 			a.run(5);
 			List<AbductionNode> sols = a.getSolutions();
-			List<AbductionNode> csols = compressSolutions(sols);
-			List<AbductionNode> sss = a.getSimplifiableSolutions();
-			System.out.println((sols!=null?sols.size():0)+" "+(sss!=null?sss.size():0));
+			List<AbductionNode> csols=Utils.findUnique(sols);
+			List<AbductionNode> sss = Utils.getSimplifiableSolutions(csols);
+			System.out.println((sols!=null?sols.size():0)
+					+" "+(csols!=null?csols.size():0)
+					+" "+(sss!=null?sss.size():0));
+			Map<String,Set<LinkLTS>> uuu=Utils.findSetsOfUnifiableLiterals(csols);
+			doUnificationStep(csols);
 			//System.out.println(sss);
-			//Utils.computeStats(sss);
-			List<AbductionNode> ds=Utils.findDuplicates(sss);
+			//Utils.computeStats(csols);
+			//Utils.computeStats(sols);
 			//Utils.groupUniqueLTSs(sss);
 			//a.runParallel(9);
 			//a.killWorkers();

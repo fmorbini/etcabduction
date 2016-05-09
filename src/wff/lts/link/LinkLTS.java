@@ -140,4 +140,18 @@ public class LinkLTS {
 		}
 		return null;
 	}
+	public int getArgCount() {
+		Type type = getType();
+		if (type==Type.WFF || type==Type.FUNC) {
+			LinkLTS p=this;
+			int count=0;
+			if (p!=null) {
+				do {
+					count++;
+				} while ((p=p.getParent())!=null && !p.isRoot());
+			}
+			return count-1;
+		}
+		return -1;
+	}
 }
