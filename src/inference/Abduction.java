@@ -136,6 +136,7 @@ public class Abduction {
 				}
 			}
 		}
+		//compute list of new abduction nodes and filter for duplicates.
 		List<AbductionNode> ret=null;
 		if (combinations!=null && !combinations.isEmpty()) {
 			synchronized (etcSolutions) {
@@ -187,6 +188,12 @@ public class Abduction {
 		return copyOfCombinations;
 	}
 
+	/**
+	 * do unification step of solution nodes.
+	 * @param sols
+	 * @return
+	 * @throws Exception
+	 */
 	private static List<AbductionNode> doUnificationStep(List<AbductionNode> sols) throws Exception {
 		int count=0;
 		/**
@@ -199,7 +206,8 @@ public class Abduction {
 				Map<String,Set<Predication>> us=a.getUnifiableSets();
 				if (us!=null) {
 					for (Set<Predication> ss:us.values()) {
-						if (ss!=null && ss.size()>1) {
+						Choose x=new Choose<Predication>(ss,2);
+						while (c.hasNext()) {
 							
 						}
 					}
@@ -257,13 +265,13 @@ public class Abduction {
 			Abduction a = new Abduction((List)obs.get(0).getAllBasicConjuncts(), (List)content, true);
 			a.run(5);
 			List<AbductionNode> sols = a.getSolutions();
-			List<AbductionNode> csols=Utils.findUnique(sols);
-			List<AbductionNode> sss = Utils.getSimplifiableSolutions(csols);
+			//List<AbductionNode> csols=Utils.findUnique(sols);
+			List<AbductionNode> sss = Utils.getSimplifiableSolutions(sols);
 			System.out.println((sols!=null?sols.size():0)
-					+" "+(csols!=null?csols.size():0)
+					//+" "+(csols!=null?csols.size():0)
 					+" "+(sss!=null?sss.size():0));
-			Map<String,Set<LinkLTS>> uuu=Utils.findSetsOfUnifiableLiterals(csols);
-			doUnificationStep(csols);
+			//Map<String,Set<LinkLTS>> uuu=Utils.findSetsOfUnifiableLiterals(csols);
+			doUnificationStep(sss);
 			//System.out.println(sss);
 			//Utils.computeStats(csols);
 			//Utils.computeStats(sols);
