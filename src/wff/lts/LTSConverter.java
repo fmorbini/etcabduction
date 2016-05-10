@@ -32,14 +32,14 @@ public class LTSConverter {
 	public static final LinkLTS OpName=new LinkLTS(null,new BaseLTS("NAME"));
 	public enum Type {WFF,AND,IMPLY,CNST,VAR,FUNC,NAME};
 
-	public static LinkLTS toLTS(UnifiableFormulaElement thing) throws Exception {
+	public static LinkLTS toLTS(UnifiableFormulaElement thing,boolean maintainVariables) throws Exception {
 		List<Variable> vars=getAllArgs(thing);
-		LinkLTS lts=toLTSinternal(thing);
+		LinkLTS lts=toLTSinternal(thing,maintainVariables);
 		lts.setVariableAssignment(vars);
 		return lts;
 	}
 	
-	public static UnifiableFormulaElement fromLTS(LinkLTS link) {
+	public static UnifiableFormulaElement fromLTS(LinkLTS link,boolean maintainVariables) {
 		LinkLTS p=link;
 		Type type=p.getType();
 		LinkedList<UnifiableFormulaElement> args=null;
@@ -48,7 +48,7 @@ public class LTSConverter {
 		switch (type) {
 		case WFF:
 		case FUNC:
-			args=getArgumentsfromLTS(p);
+			args=getArgumentsfromLTS(p,maintainVariables);
 			if (args!=null) {
 				UnifiableFormulaElement name = args.pop();
 				if (type==Type.WFF) {
@@ -60,11 +60,11 @@ public class LTSConverter {
 				}
 			}
 			vars = p.getVariableAssignment();
-			if (vars!=null) renameVariables(ret,vars);
+			if (vars!=null && !maintainVariables) renameVariables(ret,vars);
 			return ret;
 		case AND:
 		case IMPLY:
-			args=getArgumentsfromLTS(p);
+			args=getArgumentsfromLTS(p,maintainVariables);
 			if (args!=null) {
 				if (type==Type.AND) {
 					ret=new Conjunction();
@@ -74,12 +74,13 @@ public class LTSConverter {
 				}
 			}
 			vars = p.getVariableAssignment();
-			if (vars!=null) renameVariables(ret,vars);
+			if (vars!=null && !maintainVariables) renameVariables(ret,vars);
 			return ret;
 		case CNST:
 			return new Constant(p.getElement().toString());
 		case VAR:
-			return new Variable("?v");
+			if (p.getParent()!=null) return new Variable(p.getElement().toString());
+			else return new Variable("?v");
 		case NAME:
 			return new Constant(p.toString());
 		}
@@ -108,11 +109,11 @@ public class LTSConverter {
 		return p;
 	}
 
-	private static LinkedList<UnifiableFormulaElement> getArgumentsfromLTS(LinkLTS p) {
+	private static LinkedList<UnifiableFormulaElement> getArgumentsfromLTS(LinkLTS p, boolean maintainVariables) {
 		LinkedList<UnifiableFormulaElement> args=null;
 		if (p!=null) {
 			do {
-				UnifiableFormulaElement a=fromLTS(p.getElement());
+				UnifiableFormulaElement a=fromLTS(p.getElement(),maintainVariables);
 				if (args==null) args=new LinkedList<>();
 				args.push(a);
 			} while ((p=p.getParent())!=null && !p.isRoot());
@@ -139,40 +140,46 @@ public class LTSConverter {
 		return ret;
 	}
 
-	private static LinkLTS toLTSinternal(UnifiableFormulaElement thing) throws Exception {
+	private static LinkLTS toLTSinternal(UnifiableFormulaElement thing, boolean maintainVariables) throws Exception {
 		if (thing!=null) {
 			if (thing instanceof WFF) {
 				WFF wff=(WFF)thing;
-				return wffToLTS(wff);
+				return wffToLTS(wff,maintainVariables);
 			} else if (thing instanceof Term) {
 				Term term=(Term)thing;
-				return termToLTS(term);
+				return termToLTS(term, maintainVariables);
 			} else throw new Exception("invalid option.");
 		}
 		return null;
 	}
 	
-	private static LinkLTS termToLTS(Term thing) throws Exception {
+	private static LinkLTS termToLTS(Term thing,boolean maintainVariables) throws Exception {
 		if (thing!=null) {
 			if (thing instanceof Variable) {
-				return toLTS(VariableTerm,null);
+				if (maintainVariables) {
+					String name=((Variable) thing).getName();
+					BaseLTS n=constantsLTS.get(name);
+					return toLTS(VariableTerm.get(n),null,maintainVariables);
+				} else {
+					return toLTS(VariableTerm,null,maintainVariables);
+				}
 			} else if (thing instanceof Constant) {
 				String name=((Constant) thing).getName();
 				BaseLTS n=constantsLTS.get(name);
-				return toLTS(ConstantTerm.get(n),null);
+				return toLTS(ConstantTerm.get(n),null,maintainVariables);
 			} else if (thing instanceof Function) {
 				String name=((Function) thing).getName();
 				BaseLTS n=constantsLTS.get(name);
 				LinkLTS nn=OpName.get(n);
 				List<? extends UnifiableFormulaElement> args = thing.getArguments();
 				Iterator<? extends UnifiableFormulaElement> it=args!=null?args.iterator():null;
-				return toLTS(FunctionTerm.get(nn),it);
+				return toLTS(FunctionTerm.get(nn),it,maintainVariables);
 			}
 		}
 		return null;
 	}
 	
-	private static LinkLTS wffToLTS(WFF thing) throws Exception {
+	private static LinkLTS wffToLTS(WFF thing, boolean maintainVariables) throws Exception {
 		if (thing!=null) {
 			if (thing instanceof Predication) {
 				String name=((Predication) thing).getName();
@@ -180,45 +187,45 @@ public class LTSConverter {
 				BaseLTS n=constantsLTS.get(name);
 				LinkLTS nn=OpName.get(n);
 				Iterator<? extends UnifiableFormulaElement> it=args!=null?args.iterator():null;
-				return toLTS(BasicWFF.get(nn),it);
+				return toLTS(BasicWFF.get(nn),it,maintainVariables);
 			} else if (thing instanceof Implication) {
 				List<? extends UnifiableFormulaElement> args = thing.getArguments();
 				Iterator<? extends UnifiableFormulaElement> it=args!=null?args.iterator():null;
-				return toLTS(ImplicationWFF,it);
+				return toLTS(ImplicationWFF,it,maintainVariables);
 			} else if (thing instanceof Conjunction) {
 				List<? extends UnifiableFormulaElement> args = thing.getArguments();
 				Iterator<? extends UnifiableFormulaElement> it=args!=null?args.iterator():null;
-				return toLTS(ConjunctionWFF,it);
+				return toLTS(ConjunctionWFF,it,maintainVariables);
 			} else throw new Exception("invalid option.");
 		}
 		return null;
 	}
 
-	private static LinkLTS toLTS(LinkLTS n, Iterator<? extends UnifiableFormulaElement> it) throws Exception {
+	private static LinkLTS toLTS(LinkLTS n, Iterator<? extends UnifiableFormulaElement> it, boolean maintainVariables) throws Exception {
 		if (n!=null) {
 			if (it==null || !it.hasNext()) return n;
 			else {
 				UnifiableFormulaElement thing = it.next();
-				LinkLTS aLTS=toLTSinternal(thing);
+				LinkLTS aLTS=toLTSinternal(thing,maintainVariables);
 				LinkLTS nextLink = n.get(aLTS);
-				return toLTS(nextLink, it);
+				return toLTS(nextLink, it,maintainVariables);
 			}
 		}
 		return null;
 	}
 
 	public static void main(String[] args) throws Exception {
-		List<WFF> f=Parse.parse("(p1 C)");
-		LinkLTS f1=toLTS(f.get(0));
+		List<WFF> f=Parse.parse("(p1 ?a)");
+		LinkLTS f1=toLTS(f.get(0),true);
 		System.out.println(f1.getArgCount());
 		System.out.println(f1.getId()+": "+f1);
-		UnifiableFormulaElement u=fromLTS(f1);
+		UnifiableFormulaElement u=fromLTS(f1,true);
 		System.out.println(u);
 		
 		f=Parse.parse("(p1 C)");
-		LinkLTS f2=toLTS(f.get(0));
+		LinkLTS f2=toLTS(f.get(0),true);
 		System.out.println(f2.getId()+": "+f2);
-		u=fromLTS(f2);
+		u=fromLTS(f2,true);
 		System.out.println(u);
 	}
 

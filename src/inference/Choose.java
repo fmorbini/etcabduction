@@ -36,7 +36,7 @@ public class Choose<T> implements Iterator<T[]> {
 	}
 
 	private void getNextState() {
-		incrementPos(state.length-1);
+		if (n>0) incrementPos(state.length-1);
 	}
 	
 	private void incrementPos(int pos) {
@@ -86,5 +86,7 @@ public class Choose<T> implements Iterator<T[]> {
 		while(c.hasNext()) {
 			System.out.println(Arrays.toString(c.next()));
 		}
+		System.out.println(Arrays.toString(c.next()));
+		System.out.println(Arrays.toString(c.next()));
 	}
 }
