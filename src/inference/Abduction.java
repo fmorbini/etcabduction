@@ -20,6 +20,7 @@ import wff.Term;
 import wff.UnifiableFormulaElement;
 import wff.Variable;
 import wff.WFF;
+import wff.lts.LTSConverter;
 import wff.lts.link.LinkLTS;
 
 public class Abduction {
@@ -195,26 +196,49 @@ public class Abduction {
 	 * @throws Exception
 	 */
 	private static List<AbductionNode> doUnificationStep(List<AbductionNode> sols) throws Exception {
-		int count=0;
+		int u=0,r=0,eq=0,req=0;
 		/**
 		 * find list of nodes to try to unify
 		 *  find in each abduction node the set of literals that could be unified (same name ad number of arguments). 
 		 */
-		Map<Signature,Map<Variable,UnifiableFormulaElement>> pairToUnif=null;
+		Map<Signature,Map<Variable,Term>> pairToUnif=null;
+		Set<LinkLTS> ltss = new HashSet<>();
 		if (sols!=null) {
 			for(AbductionNode a:sols) {
+				Set<LinkLTS> altss=Utils.getPredicates(a);
+				ltss.addAll(altss);
 				Map<String,Set<Predication>> us=a.getUnifiableSets();
 				if (us!=null) {
 					for (Set<Predication> ss:us.values()) {
-						Choose x=new Choose<Predication>(ss,2);
-						while (c.hasNext()) {
-							
+						Choose<Predication> x=new Choose<Predication>(ss,2);
+						while (x.hasNext()) {
+							Predication[] comb = x.next();
+							LinkLTS l1=LTSConverter.toLTS(comb[0],true);
+							LinkLTS l2=LTSConverter.toLTS(comb[1],true);
+							if (l1==l2) {
+								eq++;
+								if (comb[0].toString().equalsIgnoreCase(comb[1].toString())) req++;
+								else {
+									System.out.println(a);
+								}
+							}
+							Signature s=new Signature();
+							s.addToSignature(comb);
+							if (pairToUnif==null) pairToUnif=new HashMap<>();
+							Map<Variable, Term> unif = pairToUnif.get(s);
+							if (unif!=null) {
+								r++;
+							} else {
+								u++;
+								pairToUnif.put(s, Unify.unify(comb[0], comb[1]));
+							}
 						}
 					}
 				}
 			}
 		}
-		System.out.println(count);
+		System.out.println("lts "+ltss.size());
+		System.out.println("u "+u+" r "+r+" eq "+eq+" req "+req);
 		return null;
 	}
 
@@ -272,6 +296,7 @@ public class Abduction {
 					+" "+(sss!=null?sss.size():0));
 			//Map<String,Set<LinkLTS>> uuu=Utils.findSetsOfUnifiableLiterals(csols);
 			doUnificationStep(sss);
+			Utils.findSetsOfUnifiableLiterals(sss);
 			//System.out.println(sss);
 			//Utils.computeStats(csols);
 			//Utils.computeStats(sols);

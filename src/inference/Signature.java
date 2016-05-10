@@ -2,7 +2,6 @@ package inference;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Iterator;
 
 import wff.Predication;
 import wff.lts.LTSConverter;
@@ -19,7 +18,7 @@ public class Signature implements Comparable<Signature> {
 			if (parts==null) parts=new long[ps.length];
 			else parts=Arrays.copyOf(parts, l+ps.length);
 			for(Predication p:ps) {
-				LinkLTS lts=LTSConverter.toLTS(p);
+				LinkLTS lts=LTSConverter.toLTS(p,true);
 				long id=lts.getId();
 				parts[l]=id;
 				l++;

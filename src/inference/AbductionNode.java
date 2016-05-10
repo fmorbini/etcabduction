@@ -14,8 +14,6 @@ import unify.Unify;
 import wff.Predication;
 import wff.Term;
 import wff.Variable;
-import wff.lts.LTSConverter;
-import wff.lts.link.LinkLTS;
 
 public class AbductionNode extends Node {
 	

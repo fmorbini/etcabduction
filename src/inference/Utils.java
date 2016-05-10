@@ -37,7 +37,7 @@ public class Utils {
 					if (ants.length>maxAnts) maxAnts=ants.length;
 					for(Predication ant:ants) {
 						try {
-							LinkLTS aLts=LTSConverter.toLTS(ant);
+							LinkLTS aLts=LTSConverter.toLTS(ant,true);
 							Set<AbductionNode> set = x.get(aLts);
 							if (set==null) x.put(aLts, set=new HashSet<>());
 							set.add(an);
@@ -51,7 +51,7 @@ public class Utils {
 					if (ass.length>maxAss) maxAss=ass.length;
 					for(Predication ant:ass) {
 						try {
-							LinkLTS aLts=LTSConverter.toLTS(ant);
+							LinkLTS aLts=LTSConverter.toLTS(ant,true);
 							Set<AbductionNode> set = x.get(aLts);
 							if (set==null) x.put(aLts, set=new HashSet<>());
 							set.add(an);
@@ -106,7 +106,7 @@ public class Utils {
 		if (ants!=null) {
 			for(Predication ant:ants) {
 				try {
-					LinkLTS aLts=LTSConverter.toLTS(ant);
+					LinkLTS aLts=LTSConverter.toLTS(ant,true);
 					if (ret==null) ret=new HashSet<>();
 					ret.add(aLts);
 				} catch (Exception e) {
@@ -117,7 +117,7 @@ public class Utils {
 		if (ass!=null) {
 			for(Predication ant:ass) {
 				try {
-					LinkLTS aLts=LTSConverter.toLTS(ant);
+					LinkLTS aLts=LTSConverter.toLTS(ant,true);
 					if (ret==null) ret=new HashSet<>();
 					ret.add(aLts);
 				} catch (Exception e) {
@@ -166,6 +166,7 @@ public class Utils {
 		Set<LinkLTS> ltss = Utils.uniqueLTS(abdns);
 		Map<String,Set<LinkLTS>> ret=null;
 		if (ltss!=null) {
+			System.out.println("unique lts "+ltss.size());
 			for(LinkLTS l:ltss) {
 				String name=l.getPredicate();
 				int c=l.getArgCount();
