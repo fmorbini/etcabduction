@@ -3,6 +3,7 @@ package inference;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -172,6 +173,12 @@ public class AbductionNode extends Node {
 			ret=addToSets(ants,ret);
 			Predication[] ass = getAssumptions();
 			ret=addToSets(ass,ret);
+			Iterator<String> it=ret.keySet().iterator();
+			while(it.hasNext()) {
+				String s=it.next();
+				Set<Predication> ps=ret.get(s);
+				if (ps==null || ps.size()<2) it.remove();
+			}
 		}
 		return ret;
 	}
