@@ -6,6 +6,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
+import inference.Signature;
 import parse.Parse;
 import wff.Conjunction;
 import wff.Constant;
@@ -35,7 +36,7 @@ public class LTSConverter {
 	public static LinkLTS toLTS(UnifiableFormulaElement thing,boolean maintainVariables) throws Exception {
 		List<Variable> vars=getAllArgs(thing);
 		LinkLTS lts=toLTSinternal(thing,maintainVariables);
-		lts.setVariableAssignment(vars);
+		if (lts!=null) lts.setVariableAssignment(vars);
 		return lts;
 	}
 	
@@ -217,16 +218,19 @@ public class LTSConverter {
 	public static void main(String[] args) throws Exception {
 		List<WFF> f=Parse.parse("(p1 ?a)");
 		LinkLTS f1=toLTS(f.get(0),true);
-		System.out.println(f1.getArgCount());
-		System.out.println(f1.getId()+": "+f1);
-		UnifiableFormulaElement u=fromLTS(f1,true);
-		System.out.println(u);
 		
 		f=Parse.parse("(p1 C)");
 		LinkLTS f2=toLTS(f.get(0),true);
-		System.out.println(f2.getId()+": "+f2);
-		u=fromLTS(f2,true);
-		System.out.println(u);
+		
+		Signature s=new Signature();
+		s.addToSignature(f1);
+		s.addToSignature(f2);
+		
+		Signature s2=new Signature();
+		s2.addToSignature(f2);
+		s2.addToSignature(f1);
+		
+		System.out.println(s.equals(s2));
 	}
 
 }

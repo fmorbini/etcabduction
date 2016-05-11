@@ -43,7 +43,7 @@ public class Abduction {
 		this.encouteredNodes=new HashMap<>();
 	}
 	
-	public AbductionNode getInitialNode() {
+	public AbductionNode getInitialNode() throws Exception {
 		if (root==null) {
 			root=new AbductionNode((List<Predication>) this.obs, null);
 		}
@@ -65,7 +65,7 @@ public class Abduction {
 	 */
 	public List<AbductionNode> doAbductionStep(AbductionNode n) throws Exception  {
 		//for each item in literals, find out if it can be derived from inference or if it must be assumed.
-		Predication[] literals=n.getAntecedents();
+		List<Predication> literals=n.getAntecedents();
 		List<Predication> assumptions=null;
 		Map<Predication,List<UnifiedRule>> options=null;
 		for(Predication l:literals) {
@@ -210,6 +210,7 @@ public class Abduction {
 				Map<String,Set<Predication>> us=a.getUnifiableSets();
 				if (us!=null) {
 					for (Set<Predication> ss:us.values()) {
+						if (ss.size()==2) {
 						Choose<Predication> x=new Choose<Predication>(ss,2);
 						while (x.hasNext()) {
 							Predication[] comb = x.next();
@@ -223,7 +224,8 @@ public class Abduction {
 								}
 							}
 							Signature s=new Signature();
-							s.addToSignature(comb);
+							s.addToSignature(l1);
+							s.addToSignature(l2);
 							if (pairToUnif==null) pairToUnif=new HashMap<>();
 							Map<Variable, Term> unif = pairToUnif.get(s);
 							if (unif!=null) {
@@ -232,7 +234,7 @@ public class Abduction {
 								u++;
 								pairToUnif.put(s, Unify.unify(comb[0], comb[1]));
 							}
-						}
+						}}
 					}
 				}
 			}
@@ -296,7 +298,7 @@ public class Abduction {
 					+" "+(sss!=null?sss.size():0));
 			//Map<String,Set<LinkLTS>> uuu=Utils.findSetsOfUnifiableLiterals(csols);
 			doUnificationStep(sss);
-			Utils.findSetsOfUnifiableLiterals(sss);
+			Utils.findSetsOfUnifiableLiterals(sss,true);
 			//System.out.println(sss);
 			//Utils.computeStats(csols);
 			//Utils.computeStats(sols);

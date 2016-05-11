@@ -22,7 +22,7 @@ public class AbductionParallel extends Abduction {
 		for(int i=0;i<workers;i++) this.workers.add(new AbductionWorker(jobQueue, this,etcSolutions));
 	}
 	
-	private void runParallel(int levelsToCrunch) throws InterruptedException {
+	private void runParallel(int levelsToCrunch) throws Exception {
 		runParallel(getInitialNode(), levelsToCrunch);
 	}
 	private void runParallel(AbductionNode start,int levelsToCrunch) throws InterruptedException {
