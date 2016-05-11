@@ -1,56 +1,49 @@
 package inference;
 
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 
 import wff.Predication;
 import wff.lts.LTSConverter;
 import wff.lts.link.LinkLTS;
 
 public class Signature implements Comparable<Signature> {
-
-	long[] parts=null;
-	boolean dirty=false;
+	List<Long> parts=null;
 	
-	public void addToSignature(Predication[] ps) throws Exception {
-		if (ps!=null) {
-			int l=parts!=null?parts.length:0;
-			if (parts==null) parts=new long[ps.length];
-			else parts=Arrays.copyOf(parts, l+ps.length);
-			for(Predication p:ps) {
-				LinkLTS lts=LTSConverter.toLTS(p,true);
-				long id=lts.getId();
-				parts[l]=id;
-				l++;
-			}
-			Arrays.sort(parts);
-		}
+	public boolean addToSignature(Predication p) throws Exception {
+		LinkLTS lts=LTSConverter.toLTS(p,true);
+		return addToSignature(lts);
 	}
-	public void addToSignature(Collection<LinkLTS> ps) {
-		if (ps!=null) {
-			int l=parts!=null?parts.length:0;
-			if (parts==null) parts=new long[ps.size()];
-			else parts=Arrays.copyOf(parts, l+ps.size());
-			for(LinkLTS lts:ps) {
-				long id=lts.getId();
-				parts[l]=id;
-				l++;
+	public boolean addToSignature(LinkLTS lts) throws Exception {
+		if (lts!=null) {
+			if (parts==null) parts=new ArrayList<>();
+			long id=lts.getId();
+			int l=parts.size();
+			int insertAt;
+			long atId=-1;
+			for(insertAt=0;insertAt<l;insertAt++) {
+				if ((atId=parts.get(insertAt))>=id) break;
 			}
-			Arrays.sort(parts);
+			if (atId<0 || atId!=id) {
+				parts.add(insertAt, id);
+				return true;
+			}
 		}
+		return false;
+	}
+	public void addToSignature(Collection<LinkLTS> ps) throws Exception {
+		if (ps!=null) for(LinkLTS p:ps) addToSignature(p);
 	}
 	
-	public boolean getDirty() {return dirty;}
-	public void setDirty(boolean v) {dirty=v;}
-
 	@Override
 	public int compareTo(Signature o) {
 		if (parts==o.parts) return 0;
 		else if (parts!=null && o.parts!=null) {
-			if (parts.length==o.parts.length) {
-				int l=parts.length;
+			int l=parts.size();
+			if (l==o.parts.size()) {
 				for(int i=0;i<l;i++) {
-					long diff=parts[i]-o.parts[i];
+					long diff=parts.get(i)-o.parts.get(i);
 					if (diff!=0) return (int) diff;
 				}
 				return 0;
@@ -67,8 +60,13 @@ public class Signature implements Comparable<Signature> {
 	
 	@Override
 	public int hashCode() {
-		return Arrays.hashCode(parts);
+		return parts==null?0:parts.hashCode();
 	}
 
-	
+	@Override
+	protected Signature clone() throws CloneNotSupportedException {
+		Signature ret=new Signature();
+		ret.parts=new ArrayList<>(this.parts);
+		return ret;
+	}
 }

@@ -1,6 +1,7 @@
 package inference;
 
-import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -10,85 +11,64 @@ import java.util.Set;
 
 import edu.usc.ict.nl.util.graph.Edge;
 import edu.usc.ict.nl.util.graph.Node;
-import unify.Unify;
 import wff.Predication;
-import wff.Term;
-import wff.Variable;
 
 public class AbductionNode extends Node {
 	
 	private int depth;
-	private Predication[] antecedents=null,assumptions=null;
+	private List<Predication> antecedents=null,assumptions=null;
 	private boolean hasOverlap=false;
 	private Set<String> predicatesInIt=null;
 	private Signature signature=null;
 	
-	public AbductionNode(List<Predication> ants, List<Predication> ass) {
+	public AbductionNode(List<Predication> ants, List<Predication> ass) throws Exception {
 		this();
-		this.assumptions=null;
 		addAssumptions(ass);
 		addAntecedents(ants);
 	}
-	public Signature getSignature() throws Exception {
-		if (signature==null || signature.getDirty()) {
-			Predication[] ants=getAntecedents();
-			Predication[] ass=getAssumptions();
-			if (signature==null) signature=new Signature();
-			signature.addToSignature(ants);
-			signature.addToSignature(ass);
-		}
-		signature.setDirty(false);
+	public Signature getSignature() {
 		return signature;
 	}
 	public AbductionNode() {
 		depth=0;
+		this.assumptions=null;
+		this.antecedents=null;
+		this.signature=new Signature();
 	}
-	public void addAssumptions(List<Predication> ass) {
+
+	public void addAssumptions(List<Predication> ass) throws Exception {
 		if (ass!=null && !ass.isEmpty()) {
-			int i=0;
-			if (assumptions==null) assumptions=new Predication[ass.size()];
-			else {
-				i=assumptions.length;
-				assumptions=Arrays.copyOf(assumptions, assumptions.length+ass.size());
-			}
-			for(Predication a:ass) {
-				assumptions[i++]=a;
-				storePredicate(a);
+			List<Predication> toBeAdded=filterToAdd(ass);
+			if (toBeAdded!=null && !toBeAdded.isEmpty()) {
+				if (assumptions==null) assumptions=new ArrayList<>();
+				assumptions.addAll(toBeAdded);
+				for(Predication a:toBeAdded) storePredicate(a);
 			}
 		}
 	}
-	public void addAssumptions(Predication[] ass) {
-		if (ass!=null && ass.length>0) {
-			int i=0;
-			if (assumptions==null) assumptions=new Predication[ass.length];
-			else {
-				i=assumptions.length;
-				assumptions=Arrays.copyOf(assumptions, assumptions.length+ass.length);
-			}
-			for(Predication a:ass) {
-				assumptions[i++]=a;
-				storePredicate(a);
+	private List<Predication> filterToAdd(Collection<Predication> input) throws Exception {
+		Signature s = getSignature();
+		List<Predication> toBeAdded=null;
+		for(Predication a:input) {
+			if (s.addToSignature(a)) {
+				if (toBeAdded==null) toBeAdded=new ArrayList<>(input.size());
+				toBeAdded.add(a);
 			}
 		}
+		return toBeAdded;
 	}
-	public void addAntecedents(List<Predication> ants) {
-		if (ants!=null && !ants.isEmpty()) {
-			int i=0;
-			if (antecedents==null) antecedents=new Predication[ants.size()];
-			else {
-				i=antecedents.length;
-				antecedents=Arrays.copyOf(antecedents, antecedents.length+ants.size());
-			}
-			for(Predication a:ants) {
-				antecedents[i++]=a;
-				storePredicate(a);
-			}
+	public void addAntecedents(List<Predication> ants) throws Exception {
+		List<Predication> toBeAdded=filterToAdd(ants);
+		if (toBeAdded!=null && !toBeAdded.isEmpty()) {
+			if (antecedents==null) antecedents=new ArrayList<>();
+			antecedents.addAll(toBeAdded);
+			for(Predication a:toBeAdded) storePredicate(a);
 		}
 	}
-	public Predication[] getAssumptions() {
+	public List<Predication> getAssumptions() {
 		return assumptions;
 	}
-	public Predication[] getAntecedents() {
+	public List<Predication> getAntecedents() {
 		return antecedents;
 	}
 	
@@ -98,39 +78,19 @@ public class AbductionNode extends Node {
 			if (predicatesInIt==null) predicatesInIt=new HashSet<>();
 			if (predicatesInIt.contains(name)) hasOverlap=true;
 			else predicatesInIt.add(name);
-			markSignatureAsDirty(); 
 		}
-	}
-	
-	private void markSignatureAsDirty() {
-		if (this.signature!=null) signature.setDirty(true);
 	}
 	
 	@Override
 	protected Object clone() throws CloneNotSupportedException {
 		AbductionNode ret=new AbductionNode();
-		if (this.antecedents!=null) ret.antecedents=Arrays.copyOf(this.antecedents, this.antecedents.length);
-		if (this.assumptions!=null) ret.assumptions=Arrays.copyOf(this.assumptions, this.assumptions.length);
+		if (this.antecedents!=null) ret.antecedents=new ArrayList<>(this.antecedents);
+		if (this.assumptions!=null) ret.assumptions=new ArrayList<>(this.assumptions);
+		ret.hasOverlap=this.hasOverlap;
+		ret.depth=this.depth;
+		ret.signature=this.signature.clone();
+		ret.predicatesInIt=new HashSet<>(this.predicatesInIt);
 		return ret;
-	}
-	
-	public void applyUnifier(Map<Variable, Term> unifier) {
-		if (unifier!=null) {
-			if (antecedents!=null) {
-				int l=antecedents.length;
-				for(int i=0;i<l;i++) {
-					Predication np=(Predication) Unify.subst(antecedents[i], unifier);
-					antecedents[i]=np;
-				}
-			}
-			if (assumptions!=null) {
-				int l=assumptions.length;
-				for(int i=0;i<l;i++) {
-					Predication np=(Predication) Unify.subst(assumptions[i], unifier);
-					assumptions[i]=np;
-				}
-			}
-		}
 	}
 	
 	@Override
@@ -167,22 +127,24 @@ public class AbductionNode extends Node {
 	public Map<String, Set<Predication>> getUnifiableSets() throws Exception {
 		Map<String, Set<Predication>> ret=null;
 		if (getHasOverlap()) {
-			Predication[] ants = getAntecedents();
+			List<Predication> ants = getAntecedents();
 			ret=addToSets(ants,ret);
-			Predication[] ass = getAssumptions();
+			List<Predication> ass = getAssumptions();
 			ret=addToSets(ass,ret);
-			Iterator<String> it=ret.keySet().iterator();
-			while(it.hasNext()) {
-				String s=it.next();
-				Set<Predication> ps=ret.get(s);
-				if (ps==null || ps.size()<2) it.remove();
+			if (ret!=null) {
+				Iterator<String> it=ret.keySet().iterator();
+				while(it.hasNext()) {
+					String s=it.next();
+					Set<Predication> ps=ret.get(s);
+					if (ps==null || ps.size()<2) it.remove();
+				}
 			}
 		}
 		return ret;
 	}
-	private Map<String, Set<Predication>> addToSets(Predication[] ants, Map<String, Set<Predication>> ret) throws Exception {
-		if (ants!=null) {
-			for(Predication p:ants) {
+	private Map<String, Set<Predication>> addToSets(List<Predication> toAdd, Map<String, Set<Predication>> ret) throws Exception {
+		if (toAdd!=null) {
+			for(Predication p:toAdd) {
 				String name=p.getPredicate();
 				int c=p.getArgCount();
 				String s=name+"_"+c;
@@ -197,7 +159,7 @@ public class AbductionNode extends Node {
 	
 	public boolean allEtcs() {
 		boolean ret=true;
-		Predication[] ps=getAntecedents();
+		List<Predication> ps=getAntecedents();
 		if(ps!=null) for(Predication p:ps) if (!p.getIsEtc()) return false;
 		ps=getAssumptions();
 		if(ps!=null) for(Predication p:ps) if (!p.getIsEtc()) return false;

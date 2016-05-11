@@ -29,12 +29,12 @@ public class Utils {
 			 * compute histogram of nodes that overlap n items with other nodes.
 			 */
 			for(AbductionNode an:ans) {
-				Predication[] ants = an.getAntecedents();
-				Predication[] ass = an.getAssumptions();
+				List<Predication> ants = an.getAntecedents();
+				List<Predication> ass = an.getAssumptions();
 				int all=0;
 				if (ants!=null) {
-					all+=ants.length;
-					if (ants.length>maxAnts) maxAnts=ants.length;
+					all+=ants.size();
+					if (ants.size()>maxAnts) maxAnts=ants.size();
 					for(Predication ant:ants) {
 						try {
 							LinkLTS aLts=LTSConverter.toLTS(ant,true);
@@ -47,8 +47,8 @@ public class Utils {
 					}
 				}
 				if (ass!=null) {
-					all+=ass.length;
-					if (ass.length>maxAss) maxAss=ass.length;
+					all+=ass.size();
+					if (ass.size()>maxAss) maxAss=ass.size();
 					for(Predication ant:ass) {
 						try {
 							LinkLTS aLts=LTSConverter.toLTS(ant,true);
@@ -101,8 +101,8 @@ public class Utils {
 	}
 	public static Set<LinkLTS> getPredicates(AbductionNode an) {
 		Set<LinkLTS> ret=null;
-		Predication[] ants = an.getAntecedents();
-		Predication[] ass = an.getAssumptions();
+		List<Predication> ants = an.getAntecedents();
+		List<Predication> ass = an.getAssumptions();
 		if (ants!=null) {
 			for(Predication ant:ants) {
 				try {
@@ -162,7 +162,7 @@ public class Utils {
 		}
 	}
 	
-	public static Map<String,Set<LinkLTS>> findSetsOfUnifiableLiterals(List<AbductionNode> abdns) {
+	public static Map<String,Set<LinkLTS>> findSetsOfUnifiableLiterals(List<AbductionNode> abdns,boolean print) {
 		Set<LinkLTS> ltss = Utils.uniqueLTS(abdns);
 		Map<String,Set<LinkLTS>> ret=null;
 		if (ltss!=null) {
@@ -194,10 +194,10 @@ public class Utils {
 				*/
 			}
 		}
-		statsOnSetOfUnifiableLiterals(ret);
+		statsOnSetOfUnifiableLiterals(ret,print);
 		return ret;
 	}
-	public static int[] statsOnSetOfUnifiableLiterals(Map<String,Set<LinkLTS>> uls) {
+	public static int[] statsOnSetOfUnifiableLiterals(Map<String,Set<LinkLTS>> uls,boolean print) {
 		int[] ret=null;
 		if (uls!=null && !uls.isEmpty()) {
 			int max=0;
@@ -206,9 +206,16 @@ public class Utils {
 				if (ss!=null && ss.size()>max) max=ss.size();
 			}
 			ret=new int[max+1];
+			for(int i=0;i<ret.length;i++) ret[i]=0;
 			for(String s:uls.keySet()) {
 				Set<LinkLTS> ss=uls.get(s);
 				ret[ss.size()]++;
+			}
+			if (print) {
+				for(String s:uls.keySet()) {
+					System.out.println(s);
+					System.out.println(" "+uls.get(s));
+				}
 			}
 		}
 		System.out.println(Arrays.toString(ret));
@@ -259,7 +266,7 @@ public class Utils {
 		return ret;
 	}
 	
-	public static Signature computeSignatureForListOfLTS(Collection<LinkLTS> ltss) {
+	public static Signature computeSignatureForListOfLTS(Collection<LinkLTS> ltss) throws Exception {
 		Signature ret=null;
 		if (ltss!=null) {
 			ret=new Signature();
