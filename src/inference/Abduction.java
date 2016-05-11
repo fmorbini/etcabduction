@@ -227,8 +227,7 @@ public class Abduction {
 							s.addToSignature(l1);
 							s.addToSignature(l2);
 							if (pairToUnif==null) pairToUnif=new HashMap<>();
-							Map<Variable, Term> unif = pairToUnif.get(s);
-							if (unif!=null) {
+							if (pairToUnif.containsKey(s)) {
 								r++;
 							} else {
 								u++;
@@ -298,7 +297,7 @@ public class Abduction {
 					+" "+(sss!=null?sss.size():0));
 			//Map<String,Set<LinkLTS>> uuu=Utils.findSetsOfUnifiableLiterals(csols);
 			doUnificationStep(sss);
-			Utils.findSetsOfUnifiableLiterals(sss,true);
+			//Utils.findSetsOfUnifiableLiterals(sss,true);
 			//System.out.println(sss);
 			//Utils.computeStats(csols);
 			//Utils.computeStats(sols);
