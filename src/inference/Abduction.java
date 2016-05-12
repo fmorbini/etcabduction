@@ -338,10 +338,14 @@ public class Abduction {
 				}
 			});
 			Iterator<AbductionNode> it = a.getSolutions().iterator();
-			for(int i=0;i<10;i++) {
+			double pr=1;
+			while(it.hasNext()) {
 				AbductionNode n=it.next();
-				System.out.println(n);
-				System.out.println(" "+n.getProbability());
+				if (pr>0 || n.getProbability()>=pr) {
+					System.out.println(n);
+					pr=n.getProbability();
+					System.out.println(" "+n.getProbability());
+				} else break;
 			}
 			//Utils.findSetsOfUnifiableLiterals(sss,true);
 			//System.out.println(sss);
