@@ -1,15 +1,15 @@
 package inference;
 
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
-import java.util.concurrent.ConcurrentLinkedQueue;
 
 import kb.IndexedKB;
 import parse.Parse;
@@ -17,7 +17,6 @@ import unify.Unify;
 import wff.Implication;
 import wff.Predication;
 import wff.Term;
-import wff.UnifiableFormulaElement;
 import wff.Variable;
 import wff.WFF;
 import wff.lts.LTSConverter;
@@ -141,28 +140,26 @@ public class Abduction {
 		List<AbductionNode> ret=null;
 		if (combinations!=null && !combinations.isEmpty()) {
 			synchronized (etcSolutions) {
-				for(AbductionStep c:combinations) {
-					AbductionNode an=c.getTarget();
-					if (an!=null) {
-						Signature ans=an.getSignature();
-						if (an.allEtcs()) {
-							AbductionNode ean=encouteredNodes.get(ans);
-							if (ean==null) {
-								encouteredNodes.put(ans, an);
-								etcSolutions.add(an);
-							}
-						} else {
-							AbductionNode ean=encouteredNodes.get(ans);
-							if (ean!=null) {
-								c.getSource().removeThisOutgoingEdge(c);
-								c.getSource().addEdgeTo(ean, false, false);
-							} else {
-								if (ret==null) ret=new ArrayList<>();
-								encouteredNodes.put(ans, an);
-								ret.add(an);
-							}
-						}
-					}
+				ret=filterEdges(combinations);
+				if (ret!=null) for(AbductionNode an:ret) if (an.getIsEtc()) etcSolutions.add(an);
+			}
+		}
+		return ret;
+	}
+	private List<AbductionNode> filterEdges(List<AbductionStep> edges) throws Exception {
+		List<AbductionNode> ret=null;
+		for(AbductionStep c:edges) {
+			AbductionNode an=c.getTarget();
+			if (an!=null) {
+				Signature ans=an.getSignature();
+				AbductionNode ean=encouteredNodes.get(ans);
+				if (ean!=null) {
+					c.getSource().removeThisOutgoingEdge(c);
+					c.getSource().addEdgeTo(ean, false, false);
+				} else {
+					if (ret==null) ret=new ArrayList<>();
+					encouteredNodes.put(ans, an);
+					ret.add(an);
 				}
 			}
 		}
@@ -195,8 +192,9 @@ public class Abduction {
 	 * @return
 	 * @throws Exception
 	 */
-	private static List<AbductionNode> doUnificationStep(List<AbductionNode> sols) throws Exception {
-		int u=0,r=0,eq=0,req=0;
+	private List<AbductionNode> doUnificationStep(List<AbductionNode> sols) throws Exception {
+		List<AbductionStep> edges=null;
+		int u=0,r=0,eq=0,req=0,un=0;
 		/**
 		 * find list of nodes to try to unify
 		 *  find in each abduction node the set of literals that could be unified (same name ad number of arguments). 
@@ -205,12 +203,12 @@ public class Abduction {
 		Set<LinkLTS> ltss = new HashSet<>();
 		if (sols!=null) {
 			for(AbductionNode a:sols) {
+				boolean succU=false;
 				Set<LinkLTS> altss=Utils.getPredicates(a);
 				ltss.addAll(altss);
 				Map<String,Set<Predication>> us=a.getUnifiableSets();
 				if (us!=null) {
 					for (Set<Predication> ss:us.values()) {
-						if (ss.size()==2) {
 						Choose<Predication> x=new Choose<Predication>(ss,2);
 						while (x.hasNext()) {
 							Predication[] comb = x.next();
@@ -227,20 +225,47 @@ public class Abduction {
 							s.addToSignature(l1);
 							s.addToSignature(l2);
 							if (pairToUnif==null) pairToUnif=new HashMap<>();
+							Map<Variable, Term> unif = null;
 							if (pairToUnif.containsKey(s)) {
+								unif=pairToUnif.get(s);
 								r++;
 							} else {
 								u++;
-								pairToUnif.put(s, Unify.unify(comb[0], comb[1]));
+								pairToUnif.put(s, unif=Unify.unify(comb[0], comb[1]));
 							}
-						}}
+							if (unif!=null && !unif.isEmpty()) {
+								succU=true;
+								//apply unifier and create a new child node. return the set of newly created child nodes.
+								Predication eqP=(Predication) Unify.subst(comb[0],unif);
+								AbductionNode nn=a.clone();
+								nn.removePredication(comb[0]);
+								nn.removePredication(comb[1]);
+								nn.addAntecedents(Arrays.asList(new Predication[]{eqP}));
+								AbductionStep edge = new AbductionStep();
+								edge.setTarget(nn);
+								edge.setSource(a);
+								a.addEdge(edge, false, false);
+								if (edges==null) edges=new ArrayList<>();
+								edges.add(edge);
+							}
+						}
 					}
 				}
+				if (succU) un++;
 			}
 		}
-		System.out.println("lts "+ltss.size());
-		System.out.println("u "+u+" r "+r+" eq "+eq+" req "+req);
-		return null;
+		//System.out.println("lts "+ltss.size());
+		//System.out.println("u "+u+" r "+r+" eq "+eq+" req "+req);
+		List<AbductionNode> ret=null;
+		if (edges!=null && !edges.isEmpty()) {
+			ret=filterEdges(edges);
+		}
+		{
+			int solss=sols!=null?sols.size():0;
+			int rets=ret!=null?ret.size():0;
+			System.out.println("input nodes: "+solss+" output new nodes: "+rets+" from "+un+" parent nodes. Total nodes after unification: "+(solss-un+rets));
+		}
+		return ret;
 	}
 
 	private void clear() {
@@ -282,6 +307,13 @@ public class Abduction {
 	
 	public List<AbductionNode> getSolutions() {return etcSolutions;}
 
+	private void addSolutions(List<AbductionNode> sols) {
+		if (sols!=null) {
+			synchronized (etcSolutions) {
+				for(AbductionNode an:sols) if (an.getIsEtc()) etcSolutions.add(an);
+			}
+		}
+	}
 
 	public static void main(String[] args) throws Exception {
 		List<WFF> content = Parse.parse(Parse.kb);
@@ -296,7 +328,21 @@ public class Abduction {
 					//+" "+(csols!=null?csols.size():0)
 					+" "+(sss!=null?sss.size():0));
 			//Map<String,Set<LinkLTS>> uuu=Utils.findSetsOfUnifiableLiterals(csols);
-			doUnificationStep(sss);
+			//a.doUnificationStep(sss);
+			a.addSolutions(a.doUnificationStep(sss));
+			List<AbductionNode> allSols=a.getSolutions();
+			allSols.sort(new Comparator<AbductionNode>() {
+				@Override
+				public int compare(AbductionNode n1, AbductionNode n2) {
+					return (int) (n1.getProbability()-n2.getProbability());
+				}
+			});
+			Iterator<AbductionNode> it = a.getSolutions().iterator();
+			for(int i=0;i<10;i++) {
+				AbductionNode n=it.next();
+				System.out.println(n);
+				System.out.println(" "+n.getProbability());
+			}
 			//Utils.findSetsOfUnifiableLiterals(sss,true);
 			//System.out.println(sss);
 			//Utils.computeStats(csols);

@@ -11,8 +11,8 @@ public abstract class Term implements UnifiableFormulaElement {
 			if (t instanceof String) {
 				String s=(String)t;
 				try {
-					Float.parseFloat(s);
-					ret=new Constant(s);
+					Float n=Float.parseFloat(s);
+					ret=new NumericConstant(n);
 				} catch (NumberFormatException e) {
 					if (s.startsWith("?")) ret=new Variable(s);
 					else if (StringUtils.isAllLowerCase(s)) ret=new Variable("?"+s);

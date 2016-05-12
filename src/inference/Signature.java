@@ -2,6 +2,7 @@ package inference;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 
 import wff.Predication;
@@ -10,6 +11,22 @@ import wff.lts.link.LinkLTS;
 
 public class Signature implements Comparable<Signature> {
 	List<Long> parts=null;
+	
+	public void remove(Predication p) throws Exception {
+		remove(LTSConverter.toLTS(p,true));
+	}
+	public void remove(LinkLTS lts) throws Exception {
+		if (lts!=null) {
+			if (parts!=null) {
+				long lp=lts.getId();
+				Iterator<Long> it=parts.iterator();
+				while(it.hasNext()) {
+					Long l=it.next();
+					if (l==lp) it.remove();
+				}
+			}
+		}
+	}
 	
 	public boolean addToSignature(Predication p) throws Exception {
 		LinkLTS lts=LTSConverter.toLTS(p,true);

@@ -8,6 +8,7 @@ import java.util.regex.Pattern;
 public class Predication extends WFF {
 	protected String pred=null;
 	private boolean isEtc=false;
+	private double logP=1;
 	private List<Term> arguments=null;
 	public static Predication create(String pred,List arguments) throws Exception {
 		Predication ret=new Predication(pred);
@@ -70,5 +71,14 @@ public class Predication extends WFF {
 	}
 	public void setArguments(List<Term> arguments) {
 		this.arguments = arguments;
+	}
+	
+	public Double getProbability() {
+		if (isEtc) {
+			NumericConstant arg = (NumericConstant) getArguments().get(0);
+			if (logP>0) logP=Math.log(arg.getValue());
+			return logP;
+		}
+		return null;
 	}
 }
