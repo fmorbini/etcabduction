@@ -142,7 +142,16 @@ public class Abduction {
 		if (combinations!=null && !combinations.isEmpty()) {
 			synchronized (etcSolutions) {
 				ret=filterEdges(combinations);
-				if (ret!=null) for(AbductionNode an:ret) if (an.getIsEtc()) etcSolutions.add(an);
+				if (ret!=null) {
+					Iterator<AbductionNode> it=ret.iterator();
+					while(it.hasNext()) {
+						AbductionNode an=it.next();
+						if (an.getIsEtc()) {
+							etcSolutions.add(an);
+							it.remove();
+						}
+					}
+				}
 			}
 		}
 		return ret;
@@ -322,7 +331,7 @@ public class Abduction {
 		List<WFF> obs=Parse.parse("(and (creepUpOn' E1 C BT) (flinch' E2 BT) (seq E1 E2))");
 		if (obs!=null && !obs.isEmpty() && obs.size()==1) {
 			Abduction a = new Abduction((List)obs.get(0).getAllBasicConjuncts(), (List)content, true);
-			a.run(5);
+			a.run(8);
 			//a.getInitialNode().toGDLGraph("test2.gdl");
 			//System.exit(0);
 			List<AbductionNode> sols = a.getSolutions();
