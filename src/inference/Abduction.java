@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
 
+import edu.usc.ict.nl.util.graph.Node;
 import kb.IndexedKB;
 import parse.Parse;
 import unify.Unify;
@@ -244,6 +245,7 @@ public class Abduction {
 								AbductionStep edge = new AbductionStep();
 								edge.setTarget(nn);
 								edge.setSource(a);
+								edge.addRule(new UnifiedRule(null, unif));
 								a.addEdge(edge, false, false);
 								if (edges==null) edges=new ArrayList<>();
 								edges.add(edge);
@@ -321,6 +323,8 @@ public class Abduction {
 		if (obs!=null && !obs.isEmpty() && obs.size()==1) {
 			Abduction a = new Abduction((List)obs.get(0).getAllBasicConjuncts(), (List)content, true);
 			a.run(5);
+			//a.getInitialNode().toGDLGraph("test2.gdl");
+			//System.exit(0);
 			List<AbductionNode> sols = a.getSolutions();
 			//List<AbductionNode> csols=Utils.findUnique(sols);
 			List<AbductionNode> sss = Utils.getSimplifiableSolutions(sols);
@@ -347,6 +351,8 @@ public class Abduction {
 					System.out.println(" "+n.getProbability());
 				} else break;
 			}
+			//a.getSolutions().get(1).toGDLGraph("test.gdl", Node.DIRECTION.IN);
+			
 			//Utils.findSetsOfUnifiableLiterals(sss,true);
 			//System.out.println(sss);
 			//Utils.computeStats(csols);

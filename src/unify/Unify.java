@@ -65,7 +65,7 @@ public class Unify {
 						theta=robinson(a, b, theta);
 						if (theta==null) return null;
 					}
-				}
+				} else return null;
 			} else return null;
 		}
 		return theta;
