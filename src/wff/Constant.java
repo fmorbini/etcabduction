@@ -29,7 +29,7 @@ public class Constant extends Term {
 	
 	@Override
 	public boolean equals(Object obj) {
-		if (obj!=null && obj instanceof Constant) return name.equals(((Constant)obj).name);
+		if (obj!=null && obj instanceof Constant) return getName().equals(((Constant)obj).getName());
 		else return false;
 	}
 }

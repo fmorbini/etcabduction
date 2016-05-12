@@ -16,6 +16,7 @@ import wff.Predication;
 public class AbductionNode extends Node {
 	
 	private int depth;
+	private boolean isEtc=true;
 	private List<Predication> antecedents=null,assumptions=null;
 	private boolean hasOverlap=false;
 	private Set<String> predicatesInIt=null;
@@ -78,11 +79,12 @@ public class AbductionNode extends Node {
 			if (predicatesInIt==null) predicatesInIt=new HashSet<>();
 			if (predicatesInIt.contains(name)) hasOverlap=true;
 			else predicatesInIt.add(name);
+			if (isEtc && !p.getIsEtc()) isEtc=false;
 		}
 	}
 	
 	@Override
-	protected Object clone() throws CloneNotSupportedException {
+	protected AbductionNode clone() throws CloneNotSupportedException {
 		AbductionNode ret=new AbductionNode();
 		if (this.antecedents!=null) ret.antecedents=new ArrayList<>(this.antecedents);
 		if (this.assumptions!=null) ret.assumptions=new ArrayList<>(this.assumptions);
@@ -90,9 +92,10 @@ public class AbductionNode extends Node {
 		ret.depth=this.depth;
 		ret.signature=this.signature.clone();
 		ret.predicatesInIt=new HashSet<>(this.predicatesInIt);
+		ret.isEtc=this.isEtc;
 		return ret;
 	}
-	
+
 	@Override
 	public String toString() {
 		StringBuffer ret=new StringBuffer();
@@ -157,7 +160,7 @@ public class AbductionNode extends Node {
 		return ret;
 	}
 	
-	public boolean allEtcs() {
+	private boolean computeAllEtc() {
 		boolean ret=true;
 		List<Predication> ps=getAntecedents();
 		if(ps!=null) for(Predication p:ps) if (!p.getIsEtc()) return false;
@@ -165,5 +168,54 @@ public class AbductionNode extends Node {
 		if(ps!=null) for(Predication p:ps) if (!p.getIsEtc()) return false;
 		return ret;
 	}
-
+	public boolean getIsEtc() {return isEtc;}
+	
+	@Override
+	public int hashCode() {
+		return getSignature().hashCode();
+	}
+	
+	public boolean removePredication(Predication predication) throws Exception {
+		return removeIn(predication,getAntecedents()) || removeIn(predication,getAssumptions());
+	}
+	private boolean removeIn(Predication predication,List<Predication> ps) throws Exception {
+		boolean removed=false;
+		if(ps!=null) {
+			Iterator<Predication> it=ps.iterator();
+			while(it.hasNext()) {
+				Predication p=it.next();
+				if (p==predication) {
+					it.remove();
+					removed=true;
+					getSignature().remove(predication);
+					if (!isEtc && !p.getIsEtc()) isEtc=computeAllEtc();
+					break;
+				}
+			}
+		}
+		return removed;
+	}
+	public double getProbability() {
+		if (getIsEtc()) {
+			double p=0;
+			List<Predication> ants = getAntecedents();
+			if (ants!=null) for(Predication a:ants) {
+				Double pr = a.getProbability();
+				if (pr==null) {
+					System.out.println("1");
+				}
+				p+=pr;
+			}
+			List<Predication> ass = getAssumptions();
+			if (ass!=null) for(Predication a:ass) {
+				Double pr = a.getProbability();
+				if (pr==null) {
+					System.out.println("1");
+				}
+				p+=pr;
+			}
+			return p;
+		}
+		return +1;
+	}
 }

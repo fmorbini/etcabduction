@@ -253,7 +253,7 @@ public class Utils {
 		return ret;
 	}
 	
-	public static List<AbductionNode> getSimplifiableSolutions(List<AbductionNode> sols) {
+	public static List<AbductionNode> getSimplifiableSolutions(Collection<AbductionNode> sols) {
 		List<AbductionNode> ret=null;
 		if (sols!=null) {
 			for(AbductionNode s:sols) {
