@@ -334,7 +334,7 @@ public class Abduction {
 			allSols.sort(new Comparator<AbductionNode>() {
 				@Override
 				public int compare(AbductionNode n1, AbductionNode n2) {
-					return (int) (n1.getProbability()-n2.getProbability());
+					return (int)Math.signum(n2.getProbability()-n1.getProbability());
 				}
 			});
 			Iterator<AbductionNode> it = a.getSolutions().iterator();
