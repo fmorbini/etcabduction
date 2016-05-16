@@ -326,6 +326,26 @@ public class Abduction {
 		}
 	}
 
+	private void printNbest() {
+		List<AbductionNode> allSols=getSolutions();
+		allSols.sort(new Comparator<AbductionNode>() {
+			@Override
+			public int compare(AbductionNode n1, AbductionNode n2) {
+				return (int)Math.signum(n2.getProbability()-n1.getProbability());
+			}
+		});
+		Iterator<AbductionNode> it = allSols.iterator();
+		double pr=1;
+		while(it.hasNext()) {
+			AbductionNode n=it.next();
+			if (pr>0 || n.getProbability()>=pr) {
+				System.out.println(n);
+				pr=n.getProbability();
+				System.out.println(" "+n.getProbability());
+			} else break;
+		}
+	}
+
 	public static void main(String[] args) throws Exception {
 		List<WFF> content = Parse.parse(Parse.kb);
 		List<WFF> obs=Parse.parse("(and (creepUpOn' E1 C BT) (flinch' E2 BT) (seq E1 E2))");
@@ -343,24 +363,8 @@ public class Abduction {
 			//Map<String,Set<LinkLTS>> uuu=Utils.findSetsOfUnifiableLiterals(csols);
 			//a.doUnificationStep(sss);
 			a.addSolutions(a.doUnificationStep(sss));
-			List<AbductionNode> allSols=a.getSolutions();
-			allSols.sort(new Comparator<AbductionNode>() {
-				@Override
-				public int compare(AbductionNode n1, AbductionNode n2) {
-					return (int)Math.signum(n2.getProbability()-n1.getProbability());
-				}
-			});
-			Iterator<AbductionNode> it = a.getSolutions().iterator();
-			double pr=1;
-			while(it.hasNext()) {
-				AbductionNode n=it.next();
-				if (pr>0 || n.getProbability()>=pr) {
-					System.out.println(n);
-					pr=n.getProbability();
-					System.out.println(" "+n.getProbability());
-				} else break;
-			}
-			//a.getSolutions().get(1).toGDLGraph("test.gdl", Node.DIRECTION.IN);
+			a.printNbest();
+			//a.getSolutions().get(0).toGDLGraph("test.gdl", Node.DIRECTION.IN);
 			
 			//Utils.findSetsOfUnifiableLiterals(sss,true);
 			//System.out.println(sss);

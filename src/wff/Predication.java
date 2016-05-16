@@ -27,11 +27,9 @@ public class Predication extends WFF {
 		if (as!=null) ret.setArguments(as);
 		return ret;
 	}
-	private static final Pattern etcPattern=Pattern.compile("^etc[0-9]+_.+$");
 	public Predication(String name) {
 		this.pred=name;
-		Matcher m=etcPattern.matcher(name);
-		if (m.matches()) isEtc=true;
+		if (name.startsWith("etc")) isEtc=true;
 	}
 	public String getName() {
 		return getPredicate();
