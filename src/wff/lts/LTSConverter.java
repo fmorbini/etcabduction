@@ -1,10 +1,11 @@
 package wff.lts;
 
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import inference.Signature;
 import parse.Parse;
@@ -34,9 +35,20 @@ public class LTSConverter {
 	public enum Type {WFF,AND,IMPLY,CNST,VAR,FUNC,NAME};
 
 	public static LinkLTS toLTS(UnifiableFormulaElement thing,boolean maintainVariables) throws Exception {
-		List<Variable> vars=getAllArgs(thing);
 		LinkLTS lts=toLTSinternal(thing,maintainVariables);
-		if (lts!=null) lts.setVariableAssignment(vars);
+		if (lts!=null && maintainVariables) {
+			List<Variable> vars=getAllArgs(thing);
+			lts.setVariableAssignment(vars);
+		}
+		return lts;
+	}
+	
+	private static Map<String,LinkLTS> things=null;
+	public static LinkLTS toLTSinternalString(UnifiableFormulaElement thing,boolean maintainVariables) {
+		String s=thing.toString();
+		if (things==null) things=new HashMap<>();
+		LinkLTS lts=things.get(s);
+		if (lts==null) things.put(s,lts=new LinkLTS(null, null));
 		return lts;
 	}
 	
@@ -207,7 +219,7 @@ public class LTSConverter {
 			if (it==null || !it.hasNext()) return n;
 			else {
 				UnifiableFormulaElement thing = it.next();
-				LinkLTS aLTS=toLTSinternal(thing,maintainVariables);
+				LinkLTS aLTS=toLTSinternalString(thing,maintainVariables);
 				LinkLTS nextLink = n.get(aLTS);
 				return toLTS(nextLink, it,maintainVariables);
 			}
